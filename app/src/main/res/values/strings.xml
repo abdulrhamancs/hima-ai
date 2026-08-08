@@ -38,6 +38,11 @@
     <string name="signup_confirm_password_hint">تأكيد كلمة المرور</string>
     <string name="signup_submit">إنشاء حساب</string>
     <string name="signup_have_account">لديك حساب بالفعل؟</string>
+    <string name="signup_role_label">نوع الحساب</string>
+    <string name="signup_role_field_agent">راصد ميداني</string>
+    <string name="signup_role_authority">جهة مختصة</string>
+    <string name="auth_error_password_mismatch">كلمتا المرور غير متطابقتين</string>
+    <string name="auth_error_password_requirements">كلمة المرور يجب أن تكون 8 أحرف على الأقل، وتحتوي على حرف كبير ورقم واحد على الأقل</string>
 
     <!-- Home -->
     <string name="home_greeting">مرحباً أحمد</string>
@@ -96,6 +101,7 @@
     <string name="analysis_kind">نوع المشكلة</string>
     <string name="analysis_severity">مستوى الخطورة</string>
     <string name="analysis_confidence">نسبة الثقة</string>
+    <string name="analysis_retry">إعادة المحاولة</string>
 
     <!-- Final report -->
     <string name="report_title">التقرير النهائي</string>

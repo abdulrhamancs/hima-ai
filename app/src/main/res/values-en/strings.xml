@@ -38,6 +38,11 @@
     <string name="signup_confirm_password_hint">Confirm password</string>
     <string name="signup_submit">Create account</string>
     <string name="signup_have_account">Already have an account?</string>
+    <string name="signup_role_label">Account type</string>
+    <string name="signup_role_field_agent">Field ranger</string>
+    <string name="signup_role_authority">Authority</string>
+    <string name="auth_error_password_mismatch">Passwords don\'t match</string>
+    <string name="auth_error_password_requirements">Password must be at least 8 characters, with an uppercase letter and a number</string>
 
     <!-- Home -->
     <string name="home_greeting">Welcome, Ahmad</string>
@@ -96,6 +101,7 @@
     <string name="analysis_kind">Issue type</string>
     <string name="analysis_severity">Severity level</string>
     <string name="analysis_confidence">Confidence</string>
+    <string name="analysis_retry">Try again</string>
 
     <!-- Final report -->
     <string name="report_title">Final report</string>

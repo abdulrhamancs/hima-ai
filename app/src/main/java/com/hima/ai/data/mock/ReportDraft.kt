@@ -1,6 +1,7 @@
 package com.hima.ai.data.mock
 
 import android.net.Uri
+import com.hima.ai.domain.model.AiAnalysis
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,9 @@ class ReportDraft @Inject constructor() {
     private val _description = MutableStateFlow("")
     val description: StateFlow<String> = _description.asStateFlow()
 
+    private val _analysisResult = MutableStateFlow<AiAnalysis?>(null)
+    val analysisResult: StateFlow<AiAnalysis?> = _analysisResult.asStateFlow()
+
     fun setImage(uri: Uri, source: CaptureSource) {
         _imageUri.value = uri
         _source.value = source
@@ -44,9 +48,14 @@ class ReportDraft @Inject constructor() {
         _description.value = value
     }
 
+    fun setAnalysisResult(result: AiAnalysis) {
+        _analysisResult.value = result
+    }
+
     /** Called when a fresh report starts, so nothing leaks in from the previous run. */
     fun reset() {
         clearImage()
         _description.value = ""
+        _analysisResult.value = null
     }
 }

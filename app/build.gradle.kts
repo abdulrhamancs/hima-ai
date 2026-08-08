@@ -33,6 +33,21 @@ android {
         // Empty until you add GEMINI_API_KEY to local.properties (see docs/gemini-integration.md).
         val geminiKey = localProperties.getProperty("GEMINI_API_KEY", "")
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
+
+        // Supabase project — the Android app talks to Supabase Auth directly
+        // (its anon key is designed to be client-safe; access control is RLS,
+        // not secrecy). Add SUPABASE_URL / SUPABASE_ANON_KEY to local.properties.
+        val supabaseUrl = localProperties.getProperty("SUPABASE_URL", "")
+        val supabaseAnonKey = localProperties.getProperty("SUPABASE_ANON_KEY", "")
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
+
+        // Our Express backend — only for /analyze (Gemini stays server-side).
+        // Defaults to the emulator's route to the host machine's localhost;
+        // override BACKEND_BASE_URL in local.properties for a device or a
+        // deployed backend.
+        val backendBaseUrl = localProperties.getProperty("BACKEND_BASE_URL", "http://10.0.2.2:3000/")
+        buildConfigField("String", "BACKEND_BASE_URL", "\"$backendBaseUrl\"")
     }
 
     buildTypes {
@@ -104,6 +119,14 @@ dependencies {
 
     // Image loading for captured/picked photos
     implementation(libs.coil.compose)
+
+    // Networking — Supabase auth (direct) + our backend's /analyze
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.moshi)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.moshi.kotlin)
+    ksp(libs.moshi.codegen)
 
     // Dependency injection
     implementation(libs.hilt.android)
