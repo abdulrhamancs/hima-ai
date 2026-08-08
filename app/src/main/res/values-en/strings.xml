@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English (secondary — Arabic is the app's default/primary language).
+     Switchable in-app via core/util/AppLanguage.kt. Keys must stay in parity
+     with values/strings.xml. -->
+<resources>
+    <string name="app_name">Hima AI</string>
+
+    <!-- Brand lockup (locale-invariant) -->
+    <string name="wordmark_ar">حِمى</string>
+    <string name="wordmark_en">Hima AI</string>
+
+    <!-- Language toggle -->
+    <string name="lang_toggle_label">ع</string>
+    <string name="cd_language">Change language</string>
+
+    <!-- Splash -->
+    <string name="splash_tagline">An intelligent platform to protect natural reserves and support environmental decision-making</string>
+    <string name="splash_cta">Get started</string>
+    <string name="splash_feature1_title">Smart monitoring</string>
+    <string name="splash_feature1_desc">AI that detects environmental threats</string>
+    <string name="splash_feature2_title">Sustainable protection</string>
+    <string name="splash_feature2_desc">Decision support for natural resources</string>
+    <string name="splash_feature3_title">Advanced analysis</string>
+    <string name="splash_feature3_desc">Smart analytics for reserve data</string>
+
+    <!-- Login -->
+    <string name="login_title">Sign in</string>
+    <string name="login_identifier_hint">Phone number or email</string>
+    <string name="login_password_hint">Password</string>
+    <string name="login_forgot_password">Forgot password?</string>
+    <string name="login_submit">Sign in</string>
+    <string name="login_create_account">Create new account</string>
+    <string name="login_terms">By using this app you agree to the Terms &amp; Conditions and Privacy Policy</string>
+
+    <!-- Sign up -->
+    <string name="signup_title">Create new account</string>
+    <string name="signup_name_hint">Full name</string>
+    <string name="signup_confirm_password_hint">Confirm password</string>
+    <string name="signup_submit">Create account</string>
+    <string name="signup_have_account">Already have an account?</string>
+
+    <!-- Home -->
+    <string name="home_greeting">Welcome, Ahmad</string>
+    <string name="home_greeting_sub">Together we protect our nature</string>
+    <string name="home_reserve_status">Reserve status</string>
+    <string name="home_reserve_status_value">Good</string>
+    <string name="home_reserve_status_note">No critical alerts right now</string>
+    <string name="home_stat_total">Total reports</string>
+    <string name="home_stat_open">In progress</string>
+    <string name="home_stat_done">Resolved</string>
+    <string name="home_stat_critical">Critical alerts</string>
+    <string name="home_recent">Latest reports</string>
+    <string name="home_view_all">View all</string>
+
+    <!-- Bottom navigation -->
+    <string name="tab_home">Home</string>
+    <string name="tab_reports">Reports</string>
+    <string name="tab_map">Map</string>
+    <string name="tab_new_report">New report</string>
+    <string name="tab_more">More</string>
+
+    <!-- New report -->
+    <string name="new_report_title">New report</string>
+    <string name="new_report_step_attach">Attach a photo or video</string>
+    <string name="new_report_capture">Take a photo</string>
+    <string name="new_report_gallery">Choose from gallery</string>
+    <string name="new_report_retake">Change photo</string>
+    <string name="new_report_location">Location</string>
+    <string name="new_report_location_value">Tuwaiq Mountain — Central Region</string>
+    <string name="new_report_description">Short description</string>
+    <string name="new_report_description_optional">(optional)</string>
+    <string name="new_report_description_hint">Describe the situation briefly…</string>
+    <string name="new_report_analyze">Analyze with AI</string>
+
+    <!-- AI analysis -->
+    <string name="analysis_title">AI analysis</string>
+    <string name="analysis_loading_title">Analyzing the case…</string>
+    <string name="analysis_loading_sub">Reading the photo to identify the violation type and severity level.</string>
+    <string name="analysis_step_vision">Reading the image</string>
+    <string name="analysis_step_context">Collecting location and weather data</string>
+    <string name="analysis_step_severity">Estimating severity level</string>
+    <string name="analysis_kind">Issue type</string>
+    <string name="analysis_severity">Severity level</string>
+    <string name="analysis_confidence">Confidence</string>
+
+    <!-- Final report -->
+    <string name="report_title">Final report</string>
+    <string name="report_success">Case analyzed successfully</string>
+    <string name="report_kind">Case type</string>
+    <string name="report_severity">Severity level</string>
+    <string name="report_risk_score">Risk score</string>
+    <string name="report_location">Location</string>
+    <string name="report_time">Reported at</string>
+    <string name="report_reason">Assessment reason</string>
+    <string name="report_reason_value">Tree cutting detected inside a protected area, affecting vegetation cover and the ecological balance.</string>
+    <string name="report_action">Recommended action</string>
+    <string name="report_action_value">Dispatch a field team to verify and take the necessary measures.</string>
+    <string name="report_authority">Suggested authority</string>
+    <string name="report_authority_value">Special Forces for Environmental Security</string>
+    <string name="report_save">Save report</string>
+    <string name="report_share">Share</string>
+    <string name="report_ask_ai">Continue with the AI assistant</string>
+    <string name="report_saved_toast">Report saved</string>
+
+    <!-- AI investigation -->
+    <string name="investigation_title">Gemini assistant</string>
+    <string name="investigation_subtitle">Your smart assistant for this case</string>
+    <string name="investigation_q1">We noticed cut firewood in the photo. Are there other damaged areas or cut trees at the site?</string>
+    <string name="investigation_pick">Choose what applies</string>
+    <string name="investigation_opt1">Yes, there are other traces</string>
+    <string name="investigation_opt2">Yes, and they repeat</string>
+    <string name="investigation_opt3">No, nothing else</string>
+    <string name="investigation_opt4">Not sure</string>
+    <string name="investigation_a1">Thank you. Additional traces raise the risk score to 9.1 and suggest organized activity rather than an isolated incident. I recommend escalating this report to urgent priority.</string>
+    <string name="investigation_a2">Repeated traces at the same site indicate ongoing activity. The report has been escalated to urgent priority with a suggested weekly follow-up patrol.</string>
+    <string name="investigation_a3">Thank you. Damage limited to this site keeps the risk score at 8.7, with a recommended field visit to verify within 24 hours.</string>
+    <string name="investigation_a4">No problem. I will rely on the image analysis only, keeping the risk score at 8.7 and recommending a field visit to confirm the extent of the damage.</string>
+    <string name="investigation_followup">Would you like to add this information to the final report?</string>
+    <string name="investigation_apply">Update report</string>
+    <string name="investigation_input_hint">Type your answer here…</string>
+    <string name="investigation_updated">Report updated</string>
+
+    <!-- Reports history -->
+    <string name="history_title">Reports history</string>
+    <string name="history_filter_all">All</string>
+    <string name="history_filter_open">In progress</string>
+    <string name="history_filter_done">Resolved</string>
+    <string name="history_empty">No reports in this category</string>
+
+    <!-- Severity labels -->
+    <string name="severity_low">Low</string>
+    <string name="severity_medium">Medium</string>
+    <string name="severity_high">High</string>
+    <string name="severity_critical">Critical</string>
+
+    <!-- Mock report data -->
+    <string name="incident_logging">Tree cutting</string>
+    <string name="incident_firewood">Cut firewood</string>
+    <string name="incident_fire">Fire in the area</string>
+    <string name="incident_water">Water pollution</string>
+    <string name="incident_waste">Illegal waste dumping</string>
+    <string name="incident_poaching">Illegal hunting</string>
+    <string name="incident_vehicles">Off-track vehicles</string>
+    <string name="loc_tuwaiq">Tuwaiq Mountain — Central Region</string>
+    <string name="loc_reem">Wadi Al-Reem area</string>
+    <string name="loc_tuwaiq_short">Tuwaiq Mountain</string>
+    <string name="loc_takhyeel">Wadi Al-Takhyeel</string>
+    <string name="loc_north">Northern Ridge</string>
+    <string name="time_10min">10 minutes ago</string>
+    <string name="time_1hour">1 hour ago</string>
+    <string name="time_3hours">3 hours ago</string>
+    <string name="time_may7">7 May 2025 — 10:30 AM</string>
+    <string name="time_may9">9 May 2025</string>
+    <string name="time_may6_evening">6 May 2025 — 6:45 PM</string>
+    <string name="time_may6_noon">6 May 2025 — 2:20 PM</string>
+
+    <!-- Content descriptions (accessibility) -->
+    <string name="cd_back">Back</string>
+    <string name="cd_share">Share report</string>
+    <string name="cd_send">Send</string>
+    <string name="cd_notifications">Notifications</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_filter">Filter</string>
+    <string name="cd_report_photo">Report photo</string>
+    <string name="cd_new_report">New report</string>
+    <string name="cd_my_location">My location</string>
+
+    <!-- Map -->
+    <string name="map_reserve_label">King Salman Reserve</string>
+    <string name="map_filter_all">All</string>
+    <string name="map_filter_fire">Fires</string>
+    <string name="map_filter_logging">Logging</string>
+    <string name="map_filter_poaching">Poaching</string>
+    <string name="map_filter_pollution">Pollution</string>
+    <string name="map_view_report">View Report</string>
+    <string name="map_empty_filter">No reports of this type right now</string>
+</resources>

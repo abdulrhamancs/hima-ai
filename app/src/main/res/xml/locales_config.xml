@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Supported app languages for the system per-app language picker (Settings > Apps > Hima AI > Language)
+     and for androidx.appcompat's AppCompatDelegate.setApplicationLocales(). Arabic is the default/base
+     resource set (values/); English lives in values-en/. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="ar" />
+    <locale android:name="en" />
+</locale-config>

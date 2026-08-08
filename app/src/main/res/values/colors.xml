@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Colours used by the XML host theme and the launcher icon only.
+     The Compose UI palette lives in core/designsystem/theme/Color.kt. -->
+<resources>
+    <color name="hima_bg">#FFFFFF</color>
+    <color name="hima_green">#2E4A38</color>
+    <color name="hima_ink">#2C2F2B</color>
+    <color name="white">#FFFFFF</color>
+</resources>

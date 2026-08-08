@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Arabic (default/base resource set — the app's primary language).
+     English lives in values-en/strings.xml. Keys must stay in parity.
+     No hardcoded user-facing strings in code. -->
+<resources>
+    <string name="app_name">Hima AI</string>
+
+    <!-- Brand lockup (locale-invariant) -->
+    <string name="wordmark_ar">حِمى</string>
+    <string name="wordmark_en">Hima AI</string>
+
+    <!-- Language toggle -->
+    <string name="lang_toggle_label">EN</string>
+    <string name="cd_language">تغيير اللغة</string>
+
+    <!-- Splash -->
+    <string name="splash_tagline">منصة ذكية لحماية المحميات الطبيعية ودعم اتخاذ القرار البيئي</string>
+    <string name="splash_cta">ابدأ الآن</string>
+    <string name="splash_feature1_title">رصد ذكي</string>
+    <string name="splash_feature1_desc">تقنيات AI لرصد التهديدات البيئية</string>
+    <string name="splash_feature2_title">حماية مستدامة</string>
+    <string name="splash_feature2_desc">دعم القرارات لحماية الموارد الطبيعية</string>
+    <string name="splash_feature3_title">تحليل متقدم</string>
+    <string name="splash_feature3_desc">تحليلات ذكية لبيانات المحميات</string>
+
+    <!-- Login -->
+    <string name="login_title">تسجيل الدخول</string>
+    <string name="login_identifier_hint">رقم الجوال أو البريد الإلكتروني</string>
+    <string name="login_password_hint">كلمة المرور</string>
+    <string name="login_forgot_password">نسيت كلمة المرور؟</string>
+    <string name="login_submit">تسجيل الدخول</string>
+    <string name="login_create_account">إنشاء حساب جديد</string>
+    <string name="login_terms">باستخدامك التطبيق فإنك توافق على الشروط والأحكام وسياسة الخصوصية</string>
+
+    <!-- Sign up -->
+    <string name="signup_title">إنشاء حساب جديد</string>
+    <string name="signup_name_hint">الاسم الكامل</string>
+    <string name="signup_confirm_password_hint">تأكيد كلمة المرور</string>
+    <string name="signup_submit">إنشاء حساب</string>
+    <string name="signup_have_account">لديك حساب بالفعل؟</string>
+
+    <!-- Home -->
+    <string name="home_greeting">مرحباً أحمد</string>
+    <string name="home_greeting_sub">معاً نحمي طبيعتنا</string>
+    <string name="home_reserve_status">حالة المحمية</string>
+    <string name="home_reserve_status_value">جيدة</string>
+    <string name="home_reserve_status_note">لا توجد تنبيهات حرجة حالياً</string>
+    <string name="home_stat_total">إجمالي البلاغات</string>
+    <string name="home_stat_open">قيد المعالجة</string>
+    <string name="home_stat_done">تمت المعالجة</string>
+    <string name="home_stat_critical">تنبيهات حرجة</string>
+    <string name="home_recent">آخر البلاغات</string>
+    <string name="home_view_all">عرض الكل</string>
+
+    <!-- Bottom navigation -->
+    <string name="tab_home">الرئيسية</string>
+    <string name="tab_reports">البلاغات</string>
+    <string name="tab_map">الخريطة</string>
+    <string name="tab_new_report">بلاغ جديد</string>
+    <string name="tab_more">المزيد</string>
+
+    <!-- New report -->
+    <string name="new_report_title">رفع بلاغ جديد</string>
+    <string name="new_report_step_attach">إرفاق صورة أو فيديو</string>
+    <string name="new_report_capture">التقاط صورة</string>
+    <string name="new_report_gallery">اختر من المعرض</string>
+    <string name="new_report_retake">تغيير الصورة</string>
+    <string name="new_report_location">الموقع</string>
+    <string name="new_report_location_value">جبل طويق — المنطقة الوسطى</string>
+    <string name="new_report_description">وصف مختصر</string>
+    <string name="new_report_description_optional">(اختياري)</string>
+    <string name="new_report_description_hint">اكتب وصفاً مختصراً للحالة…</string>
+    <string name="new_report_analyze">تحليل الحالة بالذكاء الاصطناعي</string>
+
+    <!-- AI analysis -->
+    <string name="analysis_title">تحليل الحالة بالذكاء الاصطناعي</string>
+    <string name="analysis_loading_title">جارٍ تحليل الحالة…</string>
+    <string name="analysis_loading_sub">يتم تحليل الصورة وتحديد نوع المخالفة ومستوى الخطورة.</string>
+    <string name="analysis_step_vision">قراءة الصورة</string>
+    <string name="analysis_step_context">جمع بيانات الموقع والطقس</string>
+    <string name="analysis_step_severity">تقدير مستوى الخطورة</string>
+    <string name="analysis_kind">نوع المشكلة</string>
+    <string name="analysis_severity">مستوى الخطورة</string>
+    <string name="analysis_confidence">نسبة الثقة</string>
+
+    <!-- Final report -->
+    <string name="report_title">التقرير النهائي</string>
+    <string name="report_success">تم تحليل الحالة بنجاح</string>
+    <string name="report_kind">نوع الحالة</string>
+    <string name="report_severity">مستوى الخطورة</string>
+    <string name="report_risk_score">درجة الخطر</string>
+    <string name="report_location">الموقع</string>
+    <string name="report_time">وقت البلاغ</string>
+    <string name="report_reason">سبب التقييم</string>
+    <string name="report_reason_value">تم اكتشاف قطع أشجار في منطقة محمية، مما يؤثر على الغطاء النباتي والتوازن البيئي.</string>
+    <string name="report_action">الإجراء المقترح</string>
+    <string name="report_action_value">إرسال فريق ميداني للتحقق واتخاذ الإجراءات اللازمة.</string>
+    <string name="report_authority">الجهة المقترحة</string>
+    <string name="report_authority_value">القوات الخاصة للأمن البيئي</string>
+    <string name="report_save">حفظ التقرير</string>
+    <string name="report_share">مشاركة</string>
+    <string name="report_ask_ai">استكمال التحقيق مع المساعد الذكي</string>
+    <string name="report_saved_toast">تم حفظ التقرير</string>
+
+    <!-- AI investigation -->
+    <string name="investigation_title">مساعد Gemini</string>
+    <string name="investigation_subtitle">مساعدك الذكي لفهم الحالة</string>
+    <string name="investigation_q1">لاحظنا وجود حطب مقطوع في الصورة. هل توجد آثار أخرى متضررة أو أشجار مقطوعة في الموقع؟</string>
+    <string name="investigation_pick">اختر ما ينطبق</string>
+    <string name="investigation_opt1">نعم، توجد آثار أخرى</string>
+    <string name="investigation_opt2">نعم، توجد آثار متكررة</string>
+    <string name="investigation_opt3">لا، لا توجد آثار أخرى</string>
+    <string name="investigation_opt4">غير متأكد</string>
+    <string name="investigation_a1">شكراً لك. وجود آثار إضافية يرفع درجة الخطر إلى 9.1 ويشير إلى نشاط منظّم وليس حادثة فردية. أوصي برفع البلاغ إلى أولوية عاجلة.</string>
+    <string name="investigation_a2">تكرار الآثار في الموقع نفسه يعني نشاطاً مستمراً. تم تحديث التقرير إلى أولوية عاجلة مع اقتراح دورية متابعة أسبوعية.</string>
+    <string name="investigation_a3">شكراً لك. اقتصار الضرر على هذا الموقع يبقي درجة الخطر عند 8.7، مع التوصية بزيارة ميدانية للتحقق خلال 24 ساعة.</string>
+    <string name="investigation_a4">لا مشكلة. سأعتمد على تحليل الصورة فقط، مع الإبقاء على درجة الخطر 8.7 والتوصية بزيارة ميدانية للتأكد من حجم الضرر.</string>
+    <string name="investigation_followup">هل ترغب في إضافة هذه المعلومات إلى التقرير النهائي؟</string>
+    <string name="investigation_apply">تحديث التقرير</string>
+    <string name="investigation_input_hint">اكتب إجابتك هنا…</string>
+    <string name="investigation_updated">تم تحديث التقرير</string>
+
+    <!-- Reports history -->
+    <string name="history_title">سجل البلاغات</string>
+    <string name="history_filter_all">الكل</string>
+    <string name="history_filter_open">قيد المعالجة</string>
+    <string name="history_filter_done">تمت المعالجة</string>
+    <string name="history_empty">لا توجد بلاغات في هذا التصنيف</string>
+
+    <!-- Severity labels -->
+    <string name="severity_low">منخفض</string>
+    <string name="severity_medium">متوسط</string>
+    <string name="severity_high">عالي</string>
+    <string name="severity_critical">حرج</string>
+
+    <!-- Mock report data -->
+    <string name="incident_logging">قطع أشجار</string>
+    <string name="incident_firewood">حطب مقطوع</string>
+    <string name="incident_fire">حريق في المنطقة</string>
+    <string name="incident_water">تلوث في المياه</string>
+    <string name="incident_waste">نفايات غير نظامية</string>
+    <string name="incident_poaching">صيد جائر</string>
+    <string name="incident_vehicles">مركبات خارج المسار</string>
+    <string name="loc_tuwaiq">جبل طويق — المنطقة الوسطى</string>
+    <string name="loc_reem">منطقة وادي الريم</string>
+    <string name="loc_tuwaiq_short">جبل طويق</string>
+    <string name="loc_takhyeel">وادي التخيل</string>
+    <string name="loc_north">الحافة الشمالية</string>
+    <string name="time_10min">منذ 10 دقائق</string>
+    <string name="time_1hour">منذ ساعة</string>
+    <string name="time_3hours">منذ 3 ساعات</string>
+    <string name="time_may7">7 مايو 2025 — 10:30 ص</string>
+    <string name="time_may9">9 مايو 2025</string>
+    <string name="time_may6_evening">6 مايو 2025 — 6:45 م</string>
+    <string name="time_may6_noon">6 مايو 2025 — 2:20 م</string>
+
+    <!-- Content descriptions (accessibility) -->
+    <string name="cd_back">رجوع</string>
+    <string name="cd_share">مشاركة البلاغ</string>
+    <string name="cd_send">إرسال</string>
+    <string name="cd_notifications">التنبيهات</string>
+    <string name="cd_menu">القائمة</string>
+    <string name="cd_filter">تصفية</string>
+    <string name="cd_report_photo">صورة البلاغ</string>
+    <string name="cd_new_report">بلاغ جديد</string>
+    <string name="cd_my_location">موقعي</string>
+
+    <!-- Map -->
+    <string name="map_reserve_label">محمية الملك سلمان</string>
+    <string name="map_filter_all">الكل</string>
+    <string name="map_filter_fire">حرائق</string>
+    <string name="map_filter_logging">احتطاب</string>
+    <string name="map_filter_poaching">صيد</string>
+    <string name="map_filter_pollution">تلوث</string>
+    <string name="map_view_report">عرض التقرير</string>
+    <string name="map_empty_filter">لا توجد بلاغات من هذا النوع حالياً</string>
+</resources>
