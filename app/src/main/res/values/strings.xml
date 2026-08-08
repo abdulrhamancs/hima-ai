@@ -65,6 +65,20 @@
     <string name="new_report_capture">التقاط صورة</string>
     <string name="new_report_gallery">اختر من المعرض</string>
     <string name="new_report_retake">تغيير الصورة</string>
+
+    <!-- Capture -->
+    <string name="capture_title">توثيق الحالة</string>
+    <string name="capture_use_photo">استخدام الصورة</string>
+    <string name="capture_retake">إعادة الالتقاط</string>
+    <string name="capture_choose_another">اختيار صورة أخرى</string>
+    <string name="capture_permission_title">نحتاج إذن الكاميرا</string>
+    <string name="capture_permission_body">لتوثيق المخالفة بصورة من الموقع.</string>
+    <string name="capture_permission_grant">السماح بالوصول</string>
+    <string name="capture_permission_settings">فتح الإعدادات</string>
+    <string name="capture_error">تعذّر التقاط الصورة، حاول مرة أخرى.</string>
+    <string name="cd_shutter">التقاط</string>
+    <string name="cd_close">إغلاق</string>
+    <string name="cd_evidence_photo">صورة المخالفة</string>
     <string name="new_report_location">الموقع</string>
     <string name="new_report_location_value">جبل طويق — المنطقة الوسطى</string>
     <string name="new_report_description">وصف مختصر</string>

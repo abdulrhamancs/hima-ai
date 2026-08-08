@@ -18,6 +18,12 @@ object HimaDestinations {
     const val HISTORY = "history"
     const val MORE = "more"
 
+    /** Arg naming which capture path to run — a [com.hima.ai.data.mock.CaptureSource] name. */
+    const val CAPTURE_ARG_SOURCE = "source"
+    const val CAPTURE_ROUTE = "capture/{$CAPTURE_ARG_SOURCE}"
+
+    fun capture(source: String): String = "capture/$source"
+
     /** Query-arg name carrying which report to open. */
     const val REPORT_ARG_ID = "reportId"
 

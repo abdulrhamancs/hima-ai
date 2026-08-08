@@ -22,11 +22,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.hima.ai.R
 import com.hima.ai.core.designsystem.component.AIAnalysisState
 import com.hima.ai.core.designsystem.component.AnalysisStepRow
@@ -85,7 +87,18 @@ fun AnalysisScreen(
                     .height(196.dp)
                     .clip(RoundedCornerShape(HimaRadius.hero)),
             ) {
-                SceneArt(kind = SceneKind.STUMP, modifier = Modifier.fillMaxSize())
+                // The evidence actually being analysed, carried from capture.
+                val evidenceUri = uiState.imageUri
+                if (evidenceUri != null) {
+                    AsyncImage(
+                        model = evidenceUri,
+                        contentDescription = stringResource(R.string.cd_evidence_photo),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    SceneArt(kind = SceneKind.STUMP, modifier = Modifier.fillMaxSize())
+                }
             }
 
             AIAnalysisState(

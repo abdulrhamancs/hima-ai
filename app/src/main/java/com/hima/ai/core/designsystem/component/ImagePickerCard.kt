@@ -1,5 +1,6 @@
 package com.hima.ai.core.designsystem.component
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,16 +21,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.hima.ai.R
 import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
-import com.hima.ai.domain.model.SceneKind
 
 /**
  * The two capture entry points, side by side on a sunk surface rather than in
@@ -93,12 +95,13 @@ private fun PickerTile(
 }
 
 /**
- * The chosen photo, with an inline affordance to swap it. Uses generated scene
- * art in place of a real camera capture for the prototype.
+ * The chosen photo, with an inline affordance to swap it. [imageUri] is the
+ * real capture or gallery pick; the gradient only exists to keep the change
+ * affordance legible over an unpredictable photo.
  */
 @Composable
 fun SelectedImageCard(
-    scene: SceneKind,
+    imageUri: Uri,
     onChangeClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -109,7 +112,12 @@ fun SelectedImageCard(
             .height(190.dp)
             .clip(RoundedCornerShape(HimaRadius.hero)),
     ) {
-        SceneArt(kind = scene, modifier = Modifier.fillMaxSize())
+        AsyncImage(
+            model = imageUri,
+            contentDescription = stringResource(R.string.cd_evidence_photo),
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
         Box(
             Modifier
                 .fillMaxSize()

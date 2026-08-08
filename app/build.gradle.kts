@@ -96,6 +96,15 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
 
+    // Camera capture (New report -> evidence photo)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+
+    // Image loading for captured/picked photos
+    implementation(libs.coil.compose)
+
     // Dependency injection
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

@@ -1,8 +1,10 @@
 package com.hima.ai.presentation.report.analysis
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hima.ai.data.mock.MockData
+import com.hima.ai.data.mock.ReportDraft
 import com.hima.ai.domain.model.Severity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -18,6 +20,8 @@ data class AnalysisUiState(
     val isComplete: Boolean = false,
     val severity: Severity = Severity.HIGH,
     val confidence: Int = MockData.CONFIDENCE_PERCENT,
+    /** The evidence being analysed, so the screen shows the ranger's own photo. */
+    val imageUri: Uri? = null,
 ) {
     val totalSteps: Int get() = 3
 }
@@ -28,9 +32,11 @@ data class AnalysisUiState(
  * later means emitting the same states from the API response instead of a timer.
  */
 @HiltViewModel
-class AnalysisViewModel @Inject constructor() : ViewModel() {
+class AnalysisViewModel @Inject constructor(
+    draft: ReportDraft,
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AnalysisUiState())
+    private val _uiState = MutableStateFlow(AnalysisUiState(imageUri = draft.imageUri.value))
     val uiState: StateFlow<AnalysisUiState> = _uiState.asStateFlow()
 
     init {

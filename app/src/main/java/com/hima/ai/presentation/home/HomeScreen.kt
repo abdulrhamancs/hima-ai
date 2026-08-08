@@ -1,5 +1,6 @@
 package com.hima.ai.presentation.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -195,6 +196,9 @@ private fun NotificationsSheet(
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalHimaColors.current
+    // Without this, system Back skips the sheet and pops Home itself — on the
+    // root screen that exits the app instead of just closing notifications.
+    BackHandler(onBack = onDismiss)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(),

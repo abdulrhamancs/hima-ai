@@ -58,7 +58,7 @@ fun ReportDetailScreen(
     onBackClick: () -> Unit,
     onInvestigateClick: () -> Unit,
     onViewOnMapClick: () -> Unit,
-    onSavedClick: () -> Unit,
+    onSavedClick: (isExistingReport: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReportDetailViewModel = hiltViewModel(),
 ) {
@@ -86,7 +86,7 @@ fun ReportDetailScreen(
     LaunchedEffect(uiState.saved) {
         if (uiState.saved) {
             delay(SAVE_CONFIRMATION_MS)
-            onSavedClick()
+            onSavedClick(uiState.isExistingReport)
         }
     }
 
