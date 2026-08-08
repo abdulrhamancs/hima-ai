@@ -14,7 +14,21 @@ object HimaDestinations {
     const val MAP = "map"
     const val NEW_REPORT = "new_report"
     const val ANALYSIS = "analysis"
-    const val REPORT = "report"
     const val INVESTIGATION = "investigation"
     const val HISTORY = "history"
+    const val MORE = "more"
+
+    /** Query-arg name carrying which report to open. */
+    const val REPORT_ARG_ID = "reportId"
+
+    /**
+     * The final-report route. [REPORT_ARG_ID] is optional: it is absent for a
+     * report that was just analysed (the flow's own result) and present when
+     * opening an existing report from Home, History, or a map marker.
+     */
+    const val REPORT_ROUTE = "report?$REPORT_ARG_ID={$REPORT_ARG_ID}"
+
+    /** Builds the report route, omitting the argument for a freshly analysed report. */
+    fun report(reportId: String? = null): String =
+        if (reportId.isNullOrBlank()) "report" else "report?$REPORT_ARG_ID=$reportId"
 }

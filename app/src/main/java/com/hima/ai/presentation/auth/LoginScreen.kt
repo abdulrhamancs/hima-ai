@@ -1,5 +1,8 @@
 package com.hima.ai.presentation.auth
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +19,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -71,6 +77,7 @@ private fun LoginContent(
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalHimaColors.current
+    var showForgotPasswordNotice by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -142,7 +149,18 @@ private fun LoginContent(
                 .padding(top = 14.dp),
             horizontalAlignment = Alignment.Start,
         ) {
-            HimaTextLink(text = stringResource(R.string.login_forgot_password), onClick = {})
+            HimaTextLink(
+                text = stringResource(R.string.login_forgot_password),
+                onClick = { showForgotPasswordNotice = true },
+            )
+            AnimatedVisibility(visible = showForgotPasswordNotice, enter = fadeIn(), exit = fadeOut()) {
+                Text(
+                    text = stringResource(R.string.login_forgot_password_notice),
+                    style = HimaTextStyles.m,
+                    color = colors.sage,
+                    modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+                )
+            }
         }
 
         HimaPrimaryButton(

@@ -7,11 +7,13 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -21,8 +23,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.hima.ai.core.designsystem.theme.HimaTextStyles
+import com.hima.ai.core.designsystem.theme.Inter
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
 import com.hima.ai.domain.model.IncidentCategory
 import com.hima.ai.domain.model.Severity
@@ -41,13 +47,7 @@ fun MapMarkerPin(
     modifier: Modifier = Modifier,
     selected: Boolean = false,
 ) {
-    val colors = LocalHimaColors.current
-    val markerColor = when (severity) {
-        Severity.LOW -> colors.severityLow
-        Severity.MEDIUM -> colors.severityMid
-        Severity.HIGH -> colors.severityHigh
-        Severity.CRITICAL -> colors.severityCritical
-    }
+    val markerColor = severityMarkerColor(severity)
     val size = if (selected) 40.dp else 34.dp
 
     Box(modifier = modifier.size(48.dp), contentAlignment = Alignment.Center) {
@@ -77,6 +77,49 @@ fun MapMarkerPin(
                 )
             }
         }
+    }
+}
+
+/** The full-saturation severity colour used on the map (vs. [SeverityBadge]'s pale tint). */
+@Composable
+fun severityMarkerColor(severity: Severity): Color {
+    val colors = LocalHimaColors.current
+    return when (severity) {
+        Severity.LOW -> colors.severityLow
+        Severity.MEDIUM -> colors.severityMid
+        Severity.HIGH -> colors.severityHigh
+        Severity.CRITICAL -> colors.severityCritical
+    }
+}
+
+/**
+ * A merged group of nearby incidents, shown instead of overlapping pins when
+ * zoomed out. Tinted by the most severe incident in the group, so a cluster
+ * hiding a critical report still reads as urgent. Tapping is expected to zoom
+ * in on the group rather than open a report directly.
+ */
+@Composable
+fun MapClusterMarker(
+    count: Int,
+    severity: Severity,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val markerColor = severityMarkerColor(severity)
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(markerColor)
+            .border(2.dp, Color.White, CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = count.toString(),
+            style = HimaTextStyles.num.copy(fontFamily = Inter, fontSize = 15.sp, fontWeight = FontWeight.Bold),
+            color = Color.White,
+        )
     }
 }
 

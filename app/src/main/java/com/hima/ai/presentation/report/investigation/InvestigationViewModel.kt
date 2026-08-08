@@ -27,11 +27,13 @@ data class InvestigationChoice(
 data class InvestigationUiState(
     val choices: List<InvestigationChoice> = emptyList(),
     val selectedIndex: Int? = null,
+    val customAnswerText: String? = null,
+    val draftText: String = "",
     val isThinking: Boolean = false,
     @StringRes val responseRes: Int? = null,
     val reportUpdated: Boolean = false,
 ) {
-    val hasAnswered: Boolean get() = selectedIndex != null
+    val hasAnswered: Boolean get() = selectedIndex != null || customAnswerText != null
 }
 
 /**
@@ -66,6 +68,23 @@ class InvestigationViewModel @Inject constructor(
             delay(THINKING_DELAY_MS)
             _uiState.update { it.copy(isThinking = false, responseRes = choice.responseRes) }
             if (choice.escalates) session.escalate()
+        }
+    }
+
+    fun onDraftTextChanged(text: String) {
+        _uiState.update { it.copy(draftText = text) }
+    }
+
+    fun onCustomAnswerSubmitted() {
+        val state = _uiState.value
+        if (state.hasAnswered) return
+        val text = state.draftText.trim()
+        if (text.isEmpty()) return
+
+        _uiState.update { it.copy(customAnswerText = text, draftText = "", isThinking = true) }
+        viewModelScope.launch {
+            delay(THINKING_DELAY_MS)
+            _uiState.update { it.copy(isThinking = false, responseRes = R.string.investigation_free_response) }
         }
     }
 

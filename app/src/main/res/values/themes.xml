@@ -8,6 +8,7 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@color/hima_bg</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowDisablePreview">true</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
     </style>
 </resources>

@@ -27,10 +27,10 @@ class HomeViewModel @Inject constructor() : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         HomeUiState(
-            totalReports = MockData.TOTAL_REPORTS,
-            openReports = MockData.OPEN_REPORTS,
-            resolvedReports = MockData.RESOLVED_REPORTS,
-            criticalAlerts = MockData.CRITICAL_ALERTS,
+            totalReports = MockData.totalReports,
+            openReports = MockData.openReports,
+            resolvedReports = MockData.resolvedReports,
+            criticalAlerts = MockData.criticalAlerts,
             recentReports = MockData.recentReports,
         ),
     )

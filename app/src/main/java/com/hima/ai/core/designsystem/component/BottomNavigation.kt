@@ -1,5 +1,6 @@
 package com.hima.ai.core.designsystem.component
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -20,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -30,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.hima.ai.R
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
+import com.hima.ai.core.designsystem.theme.rememberPressScale
 
 /** Height of [HimaBottomNavigation], for screens that float content above it. */
 val BottomNavHeight = 84.dp
@@ -102,10 +105,13 @@ private fun TabItem(
 ) {
     val colors = LocalHimaColors.current
     val tint = if (selected) colors.ink else colors.sage
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressScale = rememberPressScale(interactionSource)
     Column(
         modifier = modifier
+            .scale(pressScale)
             .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
+            .clickable(interactionSource = interactionSource, indication = LocalIndication.current, onClick = onClick)
             .padding(top = 6.dp, bottom = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(5.dp),
@@ -133,6 +139,7 @@ private fun TabItem(
 private fun NewReportAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = LocalHimaColors.current
     val interaction = remember { MutableInteractionSource() }
+    val pressScale = rememberPressScale(interaction)
     Column(
         modifier = modifier
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
@@ -144,6 +151,7 @@ private fun NewReportAction(onClick: () -> Unit, modifier: Modifier = Modifier) 
                 // Raised so the primary action breaks the bar's top edge.
                 .offset(y = (-13).dp)
                 .size(52.dp)
+                .scale(pressScale)
                 .clip(RoundedCornerShape(20.dp))
                 .background(colors.green),
             contentAlignment = Alignment.Center,

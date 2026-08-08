@@ -174,4 +174,28 @@
     <string name="map_filter_pollution">تلوث</string>
     <string name="map_view_report">عرض التقرير</string>
     <string name="map_empty_filter">لا توجد بلاغات من هذا النوع حالياً</string>
+
+    <!-- More / Settings -->
+    <string name="more_title">المزيد</string>
+    <string name="more_section_language">اللغة</string>
+    <string name="more_section_about">حول التطبيق</string>
+    <string name="more_version">الإصدار</string>
+    <string name="more_sign_out">تسجيل الخروج</string>
+
+    <!-- Home notifications sheet -->
+    <string name="notifications_title">التنبيهات</string>
+    <string name="notifications_empty">لا توجد تنبيهات جديدة</string>
+
+    <!-- Login -->
+    <string name="login_forgot_password_notice">ميزة استعادة كلمة المرور ستتوفر قريباً</string>
+
+    <!-- History -->
+    <string name="history_severity_filter">تصفية حسب الخطورة</string>
+
+    <!-- Report detail -->
+    <string name="cd_view_on_map">عرض على الخريطة</string>
+    <string name="report_share_text">%1$s\n%2$s · %3$s\nدرجة الخطر: %4$s</string>
+
+    <!-- AI investigation -->
+    <string name="investigation_free_response">شكراً لملاحظتك — سيتم أخذها بعين الاعتبار ضمن التقييم.</string>
 </resources>

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -27,8 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +51,11 @@ import com.hima.ai.core.designsystem.component.UserMessage
 import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+/** How long the "report updated" confirmation stays visible before returning. */
+private const val UPDATED_CONFIRMATION_MS = 900L
 
 /**
  * AI investigation — a focused follow-up attached to one report, not an
@@ -67,6 +77,16 @@ fun InvestigationScreen(
     // Keep the newest turn in view as the conversation grows.
     LaunchedEffect(uiState.responseRes, uiState.isThinking) {
         scope.launch { scrollState.animateScrollTo(scrollState.maxValue) }
+    }
+
+    // Show the "report updated" confirmation before returning. Previously the
+    // button popped the screen in the same click that set the flag, so the
+    // confirmation could never be seen.
+    LaunchedEffect(uiState.reportUpdated) {
+        if (uiState.reportUpdated) {
+            delay(UPDATED_CONFIRMATION_MS)
+            onReportUpdated()
+        }
     }
 
     Column(
@@ -130,6 +150,10 @@ fun InvestigationScreen(
                             Spacer(Modifier.height(16.dp))
                         }
                     }
+                    uiState.customAnswerText?.let { text ->
+                        UserMessage(text = text)
+                        Spacer(Modifier.height(16.dp))
+                    }
                     if (responseRes != null) {
                         AIMessage(text = stringResource(responseRes))
                     }
@@ -145,10 +169,7 @@ fun InvestigationScreen(
                         )
                         HimaPrimaryButton(
                             text = stringResource(R.string.investigation_apply),
-                            onClick = {
-                                viewModel.onApplyToReport()
-                                onReportUpdated()
-                            },
+                            onClick = viewModel::onApplyToReport,
                             leadingIconRes = R.drawable.ic_check,
                         )
                     }
@@ -158,7 +179,12 @@ fun InvestigationScreen(
             Spacer(Modifier.height(24.dp))
         }
 
-        InvestigationInputBar()
+        InvestigationInputBar(
+            value = uiState.draftText,
+            onValueChange = viewModel::onDraftTextChanged,
+            onSend = viewModel::onCustomAnswerSubmitted,
+            enabled = !uiState.hasAnswered,
+        )
     }
 }
 
@@ -195,11 +221,11 @@ private fun InvestigationHeader(onBackClick: () -> Unit, modifier: Modifier = Mo
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
-        HimaIconButton(
-            iconRes = R.drawable.ic_spark,
+        Icon(
+            painter = painterResource(R.drawable.ic_spark),
             contentDescription = null,
-            onClick = {},
             tint = colors.sage,
+            modifier = Modifier.size(22.dp),
         )
     }
 }
@@ -232,11 +258,18 @@ private fun UpdatedNotice(modifier: Modifier = Modifier) {
 }
 
 /**
- * A free-text affordance completing the assistant metaphor. Inert in the
- * prototype — tapping answers is the supported path until Gemini is wired in.
+ * A free-text alternative to tapping an option pill. Submitting produces the
+ * same thinking -> reply exchange, so typing is a first-class second path
+ * through the same single-question flow, not an open-ended chat.
  */
 @Composable
-private fun InvestigationInputBar(modifier: Modifier = Modifier) {
+private fun InvestigationInputBar(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSend: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
     val colors = LocalHimaColors.current
     Row(
         modifier = modifier
@@ -248,19 +281,42 @@ private fun InvestigationInputBar(modifier: Modifier = Modifier) {
             .padding(horizontal = 6.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = stringResource(R.string.investigation_input_hint),
-            style = HimaTextStyles.b.copy(fontSize = 15.sp),
-            color = colors.sage,
+        Box(
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 12.dp),
-        )
+        ) {
+            if (value.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.investigation_input_hint),
+                    style = HimaTextStyles.b.copy(fontSize = 15.sp),
+                    color = colors.sage,
+                )
+            }
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                enabled = enabled,
+                singleLine = true,
+                textStyle = HimaTextStyles.b.copy(fontSize = 15.sp, color = colors.ink),
+                cursorBrush = SolidColor(colors.green),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = { if (value.isNotBlank()) onSend() }),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         Box(
             modifier = Modifier
                 .size(MinTouchTarget)
                 .clip(RoundedCornerShape(14.dp))
-                .background(colors.green),
+                .background(if (enabled && value.isNotBlank()) colors.green else colors.sage.copy(alpha = 0.35f))
+                .then(
+                    if (enabled && value.isNotBlank()) {
+                        Modifier.clickable(onClick = onSend)
+                    } else {
+                        Modifier
+                    },
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

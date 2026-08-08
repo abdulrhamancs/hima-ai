@@ -1,6 +1,8 @@
 package com.hima.ai.presentation.report.detail
 
+import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +43,10 @@ import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.Inter
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
+import kotlinx.coroutines.delay
+
+/** How long the "saved" confirmation stays on screen before continuing to History. */
+private const val SAVE_CONFIRMATION_MS = 700L
 
 /**
  * Final report — the structured AI output. Values sit on plain white separated
@@ -50,13 +57,38 @@ import com.hima.ai.core.designsystem.theme.LocalHimaColors
 fun ReportDetailScreen(
     onBackClick: () -> Unit,
     onInvestigateClick: () -> Unit,
+    onViewOnMapClick: () -> Unit,
+    onSavedClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReportDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalHimaColors.current
+    val context = LocalContext.current
+
+    val kindText = stringResource(uiState.kindRes)
+    val locationText = stringResource(uiState.locationRes)
+    val timeText = stringResource(uiState.timeRes)
+    val shareText = stringResource(R.string.report_share_text, kindText, locationText, timeText, uiState.riskScore)
+
+    fun shareReport() {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, shareText)
+        }
+        context.startActivity(Intent.createChooser(intent, kindText))
+    }
 
     LaunchedEffect(Unit) { viewModel.refresh() }
+
+    // Let the "saved" confirmation register before moving on, so the action
+    // reads as completed rather than as an unexplained jump.
+    LaunchedEffect(uiState.saved) {
+        if (uiState.saved) {
+            delay(SAVE_CONFIRMATION_MS)
+            onSavedClick()
+        }
+    }
 
     Column(
         modifier = modifier
@@ -71,7 +103,7 @@ fun ReportDetailScreen(
                 HimaIconButton(
                     iconRes = R.drawable.ic_share,
                     contentDescription = stringResource(R.string.cd_share),
-                    onClick = {},
+                    onClick = ::shareReport,
                 )
             },
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -83,18 +115,23 @@ fun ReportDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
         ) {
-            SuccessBanner(
-                text = if (uiState.saved) {
-                    stringResource(R.string.report_saved_toast)
-                } else {
-                    stringResource(R.string.report_success)
-                },
-            )
+            // The banner confirms something that just happened. A report opened
+            // from Home, History, or a marker wasn't analysed just now, so it
+            // only earns a banner once the ranger saves it.
+            if (uiState.saved || !uiState.isExistingReport) {
+                SuccessBanner(
+                    text = if (uiState.saved) {
+                        stringResource(R.string.report_saved_toast)
+                    } else {
+                        stringResource(R.string.report_success)
+                    },
+                )
+            }
 
             Column(Modifier.padding(top = 8.dp)) {
                 KeyValueRow(
                     label = stringResource(R.string.report_kind),
-                    value = stringResource(R.string.incident_logging),
+                    value = kindText,
                 )
                 HimaDivider()
                 KeyValueRow(
@@ -115,12 +152,30 @@ fun ReportDetailScreen(
                 HimaDivider()
                 KeyValueRow(
                     label = stringResource(R.string.report_location),
-                    value = stringResource(R.string.loc_tuwaiq),
+                    modifier = Modifier.clickable(onClick = onViewOnMapClick),
+                    valueContent = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text(
+                                text = locationText,
+                                style = HimaTextStyles.t.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                                color = colors.ink,
+                            )
+                            Icon(
+                                painter = painterResource(R.drawable.ic_field_pin),
+                                contentDescription = stringResource(R.string.cd_view_on_map),
+                                tint = colors.green,
+                                modifier = Modifier.size(15.dp),
+                            )
+                        }
+                    },
                 )
                 HimaDivider()
                 KeyValueRow(
                     label = stringResource(R.string.report_time),
-                    value = stringResource(R.string.time_may7),
+                    value = timeText,
                 )
             }
 
@@ -150,7 +205,7 @@ fun ReportDetailScreen(
             ) {
                 HimaSecondaryButton(
                     text = stringResource(R.string.report_share),
-                    onClick = {},
+                    onClick = ::shareReport,
                     leadingIconRes = R.drawable.ic_share,
                     modifier = Modifier.weight(1f),
                 )

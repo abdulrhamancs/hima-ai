@@ -12,9 +12,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -31,6 +36,7 @@ import com.hima.ai.core.designsystem.component.ReportRow
 import com.hima.ai.core.designsystem.component.ScreenHeader
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
+import com.hima.ai.domain.model.Severity
 
 /**
  * Reports history — one segmented filter over a flat list. Rows are the same
@@ -60,10 +66,9 @@ fun HistoryScreen(
             title = stringResource(R.string.history_title),
             onBackClick = onBackClick,
             trailing = {
-                HimaIconButton(
-                    iconRes = R.drawable.ic_filter,
-                    contentDescription = stringResource(R.string.cd_filter),
-                    onClick = {},
+                SeverityFilterButton(
+                    selected = uiState.severityFilter,
+                    onSelect = viewModel::onSeverityFilterSelected,
                 )
             },
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -118,5 +123,40 @@ fun HistoryScreen(
             onReportsClick = {},
             onMoreClick = onMoreClick,
         )
+    }
+}
+
+/**
+ * The filter icon, tinted green while a severity filter is active so the
+ * header itself shows the list is narrowed — not just the empty state below.
+ */
+@Composable
+private fun SeverityFilterButton(
+    selected: Severity?,
+    onSelect: (Severity?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = LocalHimaColors.current
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier) {
+        HimaIconButton(
+            iconRes = R.drawable.ic_filter,
+            contentDescription = stringResource(R.string.cd_filter),
+            onClick = { expanded = true },
+            tint = if (selected != null) colors.green else null,
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.history_filter_all)) },
+                onClick = { onSelect(null); expanded = false },
+            )
+            Severity.entries.forEach { severity ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(severity.labelRes)) },
+                    onClick = { onSelect(severity); expanded = false },
+                )
+            }
+        }
     }
 }

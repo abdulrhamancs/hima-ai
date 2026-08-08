@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +24,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -34,9 +35,13 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,9 +53,12 @@ import com.hima.ai.core.designsystem.component.HimaBottomNavigation
 import com.hima.ai.core.designsystem.component.HimaIconButton
 import com.hima.ai.core.designsystem.component.HimaPrimaryButton
 import com.hima.ai.core.designsystem.component.HimaTab
+import com.hima.ai.core.designsystem.component.MapClusterMarker
 import com.hima.ai.core.designsystem.component.MapMarkerPin
 import com.hima.ai.core.designsystem.component.SceneArt
 import com.hima.ai.core.designsystem.component.SeverityBadge
+import com.hima.ai.core.designsystem.theme.HimaEasing
+import com.hima.ai.core.designsystem.theme.HimaMotionDuration
 import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
@@ -58,6 +66,12 @@ import com.hima.ai.domain.model.IncidentCategory
 import com.hima.ai.domain.model.MapIncident
 import com.hima.ai.domain.model.ReportStatus
 import kotlinx.coroutines.launch
+
+/** Eased glide shared by camera recenter/zoom — a smooth pan, not a linear one. */
+private fun <T> cameraGlideSpec() = tween<T>(
+    durationMillis = HimaMotionDuration.ScreenPush,
+    easing = HimaEasing,
+)
 
 /**
  * The reserve map — pan/zoom terrain, incident markers, and minimal floating
@@ -71,19 +85,35 @@ fun MapScreen(
     onNewReportClick: () -> Unit,
     onReportsClick: () -> Unit,
     onMoreClick: () -> Unit,
-    onViewReportClick: () -> Unit,
+    onViewReportClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MapViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalHimaColors.current
+    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val scale = remember { Animatable(1f) }
     val translation = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
 
+    // A no-overshoot spring reads as a physical camera glide rather than a
+    // mechanical linear pan — the same settle feel iOS Maps uses.
     fun recenter() {
-        scope.launch { scale.animateTo(1f, tween(450)) }
-        scope.launch { translation.animateTo(Offset.Zero, tween(450)) }
+        scope.launch { scale.animateTo(1f, cameraGlideSpec()) }
+        scope.launch { translation.animateTo(Offset.Zero, cameraGlideSpec()) }
+    }
+
+    // Centres a fraction-space point on screen at a target zoom level. Compose's
+    // graphicsLayer scales around the layer's own centre, so the translation
+    // needed to bring a point to that centre is (centre - point) * targetScale.
+    fun zoomToPoint(fx: Float, fy: Float, boxWidthPx: Float, boxHeightPx: Float) {
+        val targetScale = (scale.value * 1.8f).coerceIn(1f, 3f)
+        val target = Offset(
+            x = boxWidthPx * (0.5f - fx) * targetScale,
+            y = boxHeightPx * (0.5f - fy) * targetScale,
+        )
+        scope.launch { scale.animateTo(targetScale, cameraGlideSpec()) }
+        scope.launch { translation.animateTo(target, cameraGlideSpec()) }
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -102,6 +132,15 @@ fun MapScreen(
             ) {
                 val boxWidth = maxWidth
                 val boxHeight = maxHeight
+                val boxWidthPx = with(density) { boxWidth.toPx() }
+                val boxHeightPx = with(density) { boxHeight.toPx() }
+                // The map is geography, not text: its coordinate space must not
+                // mirror with the UI language. ReserveTerrain is a Canvas drawn
+                // in absolute coordinates, so pinning this subtree to LTR keeps
+                // marker offsets measured from the same origin the terrain uses.
+                // Without it, Arabic put markers on the wrong side of the map
+                // (plain offset) or off-screen entirely (absoluteOffset).
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 Box(
                     Modifier
                         .fillMaxSize()
@@ -115,24 +154,50 @@ fun MapScreen(
                     ReserveTerrain(Modifier.fillMaxSize())
 
                     CurrentLocationMarker(
-                        modifier = Modifier.offset(
+                        modifier = Modifier.absoluteOffset(
                             x = boxWidth * 0.5f - 20.dp,
                             y = boxHeight * 0.5f - 20.dp,
                         ),
                     )
 
-                    uiState.visibleIncidents.forEach { incident ->
-                        MapMarkerPin(
-                            category = incident.category,
-                            severity = incident.report.severity,
-                            selected = uiState.selectedIncident?.report?.id == incident.report.id,
-                            onClick = { viewModel.onMarkerClick(incident) },
-                            modifier = Modifier.offset(
-                                x = boxWidth * incident.xFraction - 24.dp,
-                                y = boxHeight * incident.yFraction - 24.dp,
-                            ),
-                        )
+                    // Clustering is O(n²); reading scale.value directly re-ran it
+                    // on every frame of a pinch or pan. Quantising the zoom means
+                    // it only re-runs when the grouping could actually change.
+                    val visibleIncidents = uiState.visibleIncidents
+                    val zoomStep = (scale.value * 4f).toInt()
+                    val markerItems = remember(visibleIncidents, zoomStep) {
+                        clusterIncidents(visibleIncidents, zoomStep / 4f)
                     }
+                    markerItems.forEach { item ->
+                        when (item) {
+                            is MapMarkerItem.Single -> {
+                                val incident = item.incident
+                                MapMarkerPin(
+                                    category = incident.category,
+                                    severity = incident.report.severity,
+                                    selected = uiState.selectedIncident?.report?.id == incident.report.id,
+                                    onClick = { viewModel.onMarkerClick(incident) },
+                                    modifier = Modifier.absoluteOffset(
+                                        x = boxWidth * incident.xFraction - 24.dp,
+                                        y = boxHeight * incident.yFraction - 24.dp,
+                                    ),
+                                )
+                            }
+                            is MapMarkerItem.Cluster -> {
+                                val topSeverity = item.incidents.maxBy { it.report.severity.ordinal }.report.severity
+                                MapClusterMarker(
+                                    count = item.incidents.size,
+                                    severity = topSeverity,
+                                    onClick = { zoomToPoint(item.xFraction, item.yFraction, boxWidthPx, boxHeightPx) },
+                                    modifier = Modifier.absoluteOffset(
+                                        x = boxWidth * item.xFraction - 22.dp,
+                                        y = boxHeight * item.yFraction - 22.dp,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                }
                 }
             }
 
@@ -145,6 +210,10 @@ fun MapScreen(
                     .fillMaxWidth()
                     .padding(top = 50.dp, start = 16.dp, end = 16.dp),
             )
+
+            if (uiState.visibleIncidents.isEmpty()) {
+                EmptyFilterNotice(modifier = Modifier.align(Alignment.Center))
+            }
         }
 
         HimaBottomNavigation(
@@ -171,7 +240,7 @@ fun MapScreen(
                 incident = incident,
                 onViewReportClick = {
                     viewModel.onDismissSheet()
-                    onViewReportClick()
+                    onViewReportClick(incident.report.id)
                 },
             )
         }
@@ -230,6 +299,26 @@ private fun MapOverlayControls(
             options = listOf(stringResource(R.string.map_filter_all)) + options.map { stringResource(it.filterLabelRes) },
             selectedIndex = if (filter == null) 0 else options.indexOf(filter) + 1,
             onSelect = onFilterSelected,
+        )
+    }
+}
+
+/** Shown over the terrain when the active filter matches no markers. */
+@Composable
+private fun EmptyFilterNotice(modifier: Modifier = Modifier) {
+    val colors = LocalHimaColors.current
+    Box(
+        modifier = modifier
+            .shadow(3.dp, RoundedCornerShape(HimaRadius.field))
+            .clip(RoundedCornerShape(HimaRadius.field))
+            .background(colors.bg)
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.map_empty_filter),
+            style = HimaTextStyles.b,
+            color = colors.sage,
+            textAlign = TextAlign.Center,
         )
     }
 }

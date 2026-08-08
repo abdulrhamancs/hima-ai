@@ -2,6 +2,7 @@ package com.hima.ai.presentation.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,13 +13,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hima.ai.R
@@ -30,14 +40,17 @@ import com.hima.ai.core.designsystem.component.ReportRow
 import com.hima.ai.core.designsystem.component.SectionHeader
 import com.hima.ai.core.designsystem.component.StatsRow
 import com.hima.ai.core.designsystem.component.StatusIndicator
+import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
+import com.hima.ai.domain.model.ReportSummary
 
 /**
  * Home — greeting, reserve health, compact counters, and the latest reports.
  * Sections are separated by whitespace and one warm surface rather than being
  * wrapped in individual cards.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNewReportClick: () -> Unit,
@@ -50,6 +63,7 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalHimaColors.current
+    var showNotifications by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -62,7 +76,12 @@ fun HomeScreen(
                 .padding(horizontal = 20.dp),
             contentPadding = PaddingValues(top = 58.dp, bottom = 24.dp),
         ) {
-            item { HomeHeader() }
+            item {
+                HomeHeader(
+                    onMenuClick = onMoreClick,
+                    onNotificationsClick = { showNotifications = true },
+                )
+            }
 
             item {
                 StatusIndicator(
@@ -111,10 +130,25 @@ fun HomeScreen(
             onMoreClick = onMoreClick,
         )
     }
+
+    if (showNotifications) {
+        NotificationsSheet(
+            reports = uiState.recentReports,
+            onDismiss = { showNotifications = false },
+            onReportClick = { id ->
+                showNotifications = false
+                onReportClick(id)
+            },
+        )
+    }
 }
 
 @Composable
-private fun HomeHeader(modifier: Modifier = Modifier) {
+private fun HomeHeader(
+    onMenuClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val colors = LocalHimaColors.current
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -124,7 +158,7 @@ private fun HomeHeader(modifier: Modifier = Modifier) {
         HimaIconButton(
             iconRes = R.drawable.ic_menu,
             contentDescription = stringResource(R.string.cd_menu),
-            onClick = {},
+            onClick = onMenuClick,
             filled = true,
         )
         Column(Modifier.weight(1f)) {
@@ -144,9 +178,57 @@ private fun HomeHeader(modifier: Modifier = Modifier) {
         HimaIconButton(
             iconRes = R.drawable.ic_bell,
             contentDescription = stringResource(R.string.cd_notifications),
-            onClick = {},
+            onClick = onNotificationsClick,
             filled = true,
             badged = true,
         )
+    }
+}
+
+/** The reserve's latest reports, reused as the notification feed — same rows, same data. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NotificationsSheet(
+    reports: List<ReportSummary>,
+    onDismiss: () -> Unit,
+    onReportClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = LocalHimaColors.current
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(),
+        containerColor = colors.bg,
+        shape = RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet),
+        modifier = modifier,
+    ) {
+        Column(Modifier.padding(horizontal = 20.dp)) {
+            Text(
+                text = stringResource(R.string.notifications_title),
+                style = HimaTextStyles.h2.copy(fontSize = 17.sp),
+                color = colors.ink,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+            if (reports.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 40.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.notifications_empty),
+                        style = HimaTextStyles.b,
+                        color = colors.sage,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            } else {
+                reports.forEach { report ->
+                    ReportRow(report = report, onClick = { onReportClick(report.id) })
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+        }
     }
 }
