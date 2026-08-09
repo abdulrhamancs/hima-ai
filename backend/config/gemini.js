@@ -55,4 +55,20 @@ const visionModel = genAI.getGenerativeModel({
   },
 });
 
-module.exports = { chatModel, visionModel };
+const ANALYZE_IMAGE_PROMPT =
+  "حلل هذه الصورة. أولاً حدد هل محتواها واضح بدرجة كافية (is_recognizable)، وهل هي مرتبطة بالمجال البيئي أو المحميات الطبيعية (is_environmental) — يشمل ذلك الحيوانات والنباتات والتربة ومصادر المياه والتلوث والحرائق وأي أضرار أو ظواهر بيئية. إذا كانت الصورة غير واضحة أو غير مرتبطة بالبيئة، لا تكتب وصفًا أو تحليلاً تفصيليًا لها. فقط في حال كانت الصورة واضحة ومرتبطة بالبيئة، صف المشكلة البيئية إن وجدت مثل حريق أو آفة نباتية أو احتطاب أو صيد جائر.";
+
+// Shared by /analyze and POST /reports so both call Gemini identically.
+async function analyzeImage(buffer, mimeType) {
+  const imagePart = {
+    inlineData: {
+      data: buffer.toString("base64"),
+      mimeType,
+    },
+  };
+
+  const result = await visionModel.generateContent([ANALYZE_IMAGE_PROMPT, imagePart]);
+  return JSON.parse(result.response.text());
+}
+
+module.exports = { chatModel, visionModel, analyzeImage };
