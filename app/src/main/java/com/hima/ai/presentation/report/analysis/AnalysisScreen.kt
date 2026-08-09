@@ -22,16 +22,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.hima.ai.R
 import com.hima.ai.core.designsystem.component.AIAnalysisState
 import com.hima.ai.core.designsystem.component.AnalysisStepRow
 import com.hima.ai.core.designsystem.component.ConfidenceBar
 import com.hima.ai.core.designsystem.component.HimaDivider
+import com.hima.ai.core.designsystem.component.HimaTextLink
 import com.hima.ai.core.designsystem.component.KeyValueRow
 import com.hima.ai.core.designsystem.component.SceneArt
 import com.hima.ai.core.designsystem.component.ScreenHeader
@@ -85,7 +88,18 @@ fun AnalysisScreen(
                     .height(196.dp)
                     .clip(RoundedCornerShape(HimaRadius.hero)),
             ) {
-                SceneArt(kind = SceneKind.STUMP, modifier = Modifier.fillMaxSize())
+                // The evidence actually being analysed, carried from capture.
+                val evidenceUri = uiState.imageUri
+                if (evidenceUri != null) {
+                    AsyncImage(
+                        model = evidenceUri,
+                        contentDescription = stringResource(R.string.cd_evidence_photo),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    SceneArt(kind = SceneKind.STUMP, modifier = Modifier.fillMaxSize())
+                }
             }
 
             AIAnalysisState(
@@ -109,45 +123,82 @@ fun AnalysisScreen(
                 )
             }
 
-            AnimatedVisibility(visible = uiState.stepsDone >= 1, enter = fadeIn()) {
-                Column(Modifier.padding(top = 10.dp)) {
-                    KeyValueRow(
-                        label = stringResource(R.string.analysis_kind),
-                        value = stringResource(R.string.incident_logging),
-                    )
-                    HimaDivider()
+            val result = uiState.result
+            AnimatedVisibility(visible = uiState.stepsDone >= 1 && result != null, enter = fadeIn()) {
+                if (result != null) {
+                    Column(Modifier.padding(top = 10.dp)) {
+                        KeyValueRow(
+                            label = stringResource(R.string.analysis_kind),
+                            value = result.issueType,
+                        )
+                        HimaDivider()
+                    }
                 }
             }
-            AnimatedVisibility(visible = uiState.stepsDone >= 3, enter = fadeIn()) {
-                Column {
-                    KeyValueRow(
-                        label = stringResource(R.string.analysis_severity),
-                        valueContent = { SeverityBadge(uiState.severity) },
-                    )
-                    HimaDivider()
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 14.dp, bottom = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.analysis_confidence),
-                            style = HimaTextStyles.b.copy(fontSize = 14.5.sp),
-                            color = colors.sage,
+            AnimatedVisibility(visible = uiState.stepsDone >= 3 && result != null, enter = fadeIn()) {
+                if (result != null) {
+                    Column {
+                        KeyValueRow(
+                            label = stringResource(R.string.analysis_severity),
+                            valueContent = { SeverityBadge(result.riskLevel) },
                         )
-                        Text(
-                            text = "${uiState.confidence}%",
-                            style = HimaTextStyles.num.copy(fontFamily = Inter, fontSize = 15.sp),
-                            color = colors.ink,
-                        )
+                        HimaDivider()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 14.dp, bottom = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.analysis_confidence),
+                                style = HimaTextStyles.b.copy(fontSize = 14.5.sp),
+                                color = colors.sage,
+                            )
+                            Text(
+                                text = "${result.confidence}%",
+                                style = HimaTextStyles.num.copy(fontFamily = Inter, fontSize = 15.sp),
+                                color = colors.ink,
+                            )
+                        }
+                        ConfidenceBar(progress = result.confidence / 100f)
                     }
-                    ConfidenceBar(progress = uiState.confidence / 100f)
                 }
+            }
+
+            AnimatedVisibility(visible = uiState.errorMessage != null, enter = fadeIn()) {
+                AnalysisErrorNotice(
+                    message = uiState.errorMessage.orEmpty(),
+                    onRetry = viewModel::onRetry,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
             }
 
             Spacer(Modifier.height(30.dp))
         }
+    }
+}
+
+/** A failed analysis run — the photo stays visible above this, so retrying doesn't feel like starting over. */
+@Composable
+private fun AnalysisErrorNotice(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = LocalHimaColors.current
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(HimaRadius.field))
+            .background(colors.warm)
+            .padding(16.dp),
+    ) {
+        Text(
+            text = message,
+            style = HimaTextStyles.b.copy(fontSize = 14.5.sp),
+            color = colors.severityCritical,
+        )
+        HimaTextLink(
+            text = stringResource(R.string.analysis_retry),
+            onClick = onRetry,
+            modifier = Modifier.padding(top = 8.dp),
+        )
     }
 }

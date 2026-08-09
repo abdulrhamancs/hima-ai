@@ -58,7 +58,7 @@ fun ReportDetailScreen(
     onBackClick: () -> Unit,
     onInvestigateClick: () -> Unit,
     onViewOnMapClick: () -> Unit,
-    onSavedClick: () -> Unit,
+    onSavedClick: (isExistingReport: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReportDetailViewModel = hiltViewModel(),
 ) {
@@ -66,7 +66,7 @@ fun ReportDetailScreen(
     val colors = LocalHimaColors.current
     val context = LocalContext.current
 
-    val kindText = stringResource(uiState.kindRes)
+    val kindText = uiState.kindOverride ?: stringResource(uiState.kindRes)
     val locationText = stringResource(uiState.locationRes)
     val timeText = stringResource(uiState.timeRes)
     val shareText = stringResource(R.string.report_share_text, kindText, locationText, timeText, uiState.riskScore)
@@ -86,7 +86,7 @@ fun ReportDetailScreen(
     LaunchedEffect(uiState.saved) {
         if (uiState.saved) {
             delay(SAVE_CONFIRMATION_MS)
-            onSavedClick()
+            onSavedClick(uiState.isExistingReport)
         }
     }
 
@@ -181,11 +181,11 @@ fun ReportDetailScreen(
 
             ReportSection(
                 title = stringResource(R.string.report_reason),
-                body = stringResource(R.string.report_reason_value),
+                body = uiState.reasonOverride ?: stringResource(R.string.report_reason_value),
             )
             ReportSection(
                 title = stringResource(R.string.report_action),
-                body = stringResource(R.string.report_action_value),
+                body = uiState.recommendationOverride ?: stringResource(R.string.report_action_value),
             )
             ReportSection(
                 title = stringResource(R.string.report_authority),

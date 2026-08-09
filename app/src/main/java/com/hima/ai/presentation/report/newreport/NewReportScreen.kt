@@ -49,6 +49,8 @@ import com.hima.ai.core.designsystem.theme.LocalHimaColors
 fun NewReportScreen(
     onBackClick: () -> Unit,
     onAnalyzeClick: () -> Unit,
+    onCaptureClick: () -> Unit,
+    onGalleryClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NewReportViewModel = hiltViewModel(),
 ) {
@@ -85,14 +87,14 @@ fun NewReportScreen(
                 modifier = Modifier.padding(bottom = 11.dp),
             )
 
-            val scene = uiState.selectedScene
-            if (scene == null) {
+            val imageUri = uiState.imageUri
+            if (imageUri == null) {
                 ImagePickerCard(
-                    onCaptureClick = viewModel::onImageSelected,
-                    onGalleryClick = viewModel::onImageSelected,
+                    onCaptureClick = onCaptureClick,
+                    onGalleryClick = onGalleryClick,
                 )
             } else {
-                SelectedImageCard(scene = scene, onChangeClick = viewModel::onClearImage)
+                SelectedImageCard(imageUri = imageUri, onChangeClick = viewModel::onClearImage)
             }
 
             Text(

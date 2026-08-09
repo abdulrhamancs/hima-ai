@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.hima.ai.core.designsystem.theme.HimaEasing
 import com.hima.ai.core.designsystem.theme.HimaMotionDuration
+import com.hima.ai.data.mock.CaptureSource
 import com.hima.ai.presentation.auth.LoginScreen
 import com.hima.ai.presentation.auth.SignUpScreen
 import com.hima.ai.presentation.history.HistoryScreen
@@ -21,6 +22,7 @@ import com.hima.ai.presentation.home.HomeScreen
 import com.hima.ai.presentation.map.MapScreen
 import com.hima.ai.presentation.more.MoreScreen
 import com.hima.ai.presentation.report.analysis.AnalysisScreen
+import com.hima.ai.presentation.report.capture.CaptureScreen
 import com.hima.ai.presentation.report.detail.ReportDetailScreen
 import com.hima.ai.presentation.report.investigation.InvestigationScreen
 import com.hima.ai.presentation.report.newreport.NewReportScreen
@@ -156,6 +158,22 @@ fun HimaNavHost(
             NewReportScreen(
                 onBackClick = { back(entry) },
                 onAnalyzeClick = { push(entry, HimaDestinations.ANALYSIS) },
+                onCaptureClick = { push(entry, HimaDestinations.capture(CaptureSource.CAMERA.name)) },
+                onGalleryClick = { push(entry, HimaDestinations.capture(CaptureSource.GALLERY.name)) },
+            )
+        }
+
+        composable(
+            route = HimaDestinations.CAPTURE_ROUTE,
+            arguments = listOf(
+                navArgument(HimaDestinations.CAPTURE_ARG_SOURCE) { type = NavType.StringType },
+            ),
+        ) { entry ->
+            CaptureScreen(
+                // Both outcomes return to New report; only a confirmed photo
+                // has been written to the draft by this point.
+                onConfirmed = { back(entry) },
+                onCancelled = { back(entry) },
             )
         }
 
@@ -188,11 +206,28 @@ fun HimaNavHost(
             ReportDetailScreen(
                 onBackClick = { back(entry) },
                 onInvestigateClick = { push(entry, HimaDestinations.INVESTIGATION) },
-                onViewOnMapClick = { goTab(entry, HimaDestinations.MAP) },
-                onSavedClick = {
-                    // Saving completes the flow, so land on History with the
-                    // saved report rather than leaving the user on a dead end.
-                    goTab(entry, HimaDestinations.HISTORY)
+                // A real push, not goTab: goTab pops everything back to Home
+                // first, which — reached from History → Report → View on Map —
+                // discarded History and Report from the stack, so Back from
+                // Map landed on Home instead of the report the ranger came
+                // from. A plain push keeps Report underneath, so Back returns
+                // to exactly the report that was open.
+                onViewOnMapClick = { push(entry, HimaDestinations.MAP) },
+                onSavedClick = { isExistingReport ->
+                    if (isExistingReport) {
+                        // Re-saving a report that's already stored doesn't
+                        // complete a flow — just return to wherever it was
+                        // opened from (History, Map, or Home).
+                        back(entry)
+                    } else {
+                        // This report is what New Report → Camera/Gallery →
+                        // Analysis just produced. Submitting it completes that
+                        // flow, which always resolves to Home — regardless of
+                        // whether "+" was tapped from Home, Map, or History —
+                        // rather than landing back on whichever tab "+" was
+                        // reached from.
+                        goHome(entry)
+                    }
                 },
             )
         }

@@ -3,6 +3,13 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Evidence capture. Choosing an existing photo goes through the system
+         photo picker, which needs no storage permission. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+
     <application
         android:name=".HimaApplication"
         android:allowBackup="true"

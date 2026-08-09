@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,11 +58,19 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiState.signedIn) {
+        if (uiState.signedIn) {
+            viewModel.onSignedInHandled()
+            onSignInSuccess()
+        }
+    }
+
     LoginContent(
         uiState = uiState,
         onIdentifierChange = viewModel::onIdentifierChange,
         onPasswordChange = viewModel::onPasswordChange,
-        onSignIn = onSignInSuccess,
+        onSignIn = viewModel::onSubmit,
         onCreateAccountClick = onCreateAccountClick,
         modifier = modifier,
     )
@@ -163,9 +172,20 @@ private fun LoginContent(
             }
         }
 
+        AnimatedVisibility(visible = uiState.errorMessage != null, enter = fadeIn(), exit = fadeOut()) {
+            Text(
+                text = uiState.errorMessage.orEmpty(),
+                style = HimaTextStyles.m,
+                color = colors.severityCritical,
+                modifier = Modifier.padding(top = 10.dp),
+            )
+        }
+
         HimaPrimaryButton(
             text = stringResource(R.string.login_submit),
             onClick = onSignIn,
+            enabled = uiState.canSubmit,
+            loading = uiState.isSubmitting,
             modifier = Modifier.padding(top = 8.dp),
         )
         HimaSecondaryButton(

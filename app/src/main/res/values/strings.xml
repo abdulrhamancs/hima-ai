@@ -38,6 +38,11 @@
     <string name="signup_confirm_password_hint">تأكيد كلمة المرور</string>
     <string name="signup_submit">إنشاء حساب</string>
     <string name="signup_have_account">لديك حساب بالفعل؟</string>
+    <string name="signup_role_label">نوع الحساب</string>
+    <string name="signup_role_field_agent">راصد ميداني</string>
+    <string name="signup_role_authority">جهة مختصة</string>
+    <string name="auth_error_password_mismatch">كلمتا المرور غير متطابقتين</string>
+    <string name="auth_error_password_requirements">كلمة المرور يجب أن تكون 8 أحرف على الأقل، وتحتوي على حرف كبير ورقم واحد على الأقل</string>
 
     <!-- Home -->
     <string name="home_greeting">مرحباً أحمد</string>
@@ -65,6 +70,20 @@
     <string name="new_report_capture">التقاط صورة</string>
     <string name="new_report_gallery">اختر من المعرض</string>
     <string name="new_report_retake">تغيير الصورة</string>
+
+    <!-- Capture -->
+    <string name="capture_title">توثيق الحالة</string>
+    <string name="capture_use_photo">استخدام الصورة</string>
+    <string name="capture_retake">إعادة الالتقاط</string>
+    <string name="capture_choose_another">اختيار صورة أخرى</string>
+    <string name="capture_permission_title">نحتاج إذن الكاميرا</string>
+    <string name="capture_permission_body">لتوثيق المخالفة بصورة من الموقع.</string>
+    <string name="capture_permission_grant">السماح بالوصول</string>
+    <string name="capture_permission_settings">فتح الإعدادات</string>
+    <string name="capture_error">تعذّر التقاط الصورة، حاول مرة أخرى.</string>
+    <string name="cd_shutter">التقاط</string>
+    <string name="cd_close">إغلاق</string>
+    <string name="cd_evidence_photo">صورة المخالفة</string>
     <string name="new_report_location">الموقع</string>
     <string name="new_report_location_value">جبل طويق — المنطقة الوسطى</string>
     <string name="new_report_description">وصف مختصر</string>
@@ -82,6 +101,7 @@
     <string name="analysis_kind">نوع المشكلة</string>
     <string name="analysis_severity">مستوى الخطورة</string>
     <string name="analysis_confidence">نسبة الثقة</string>
+    <string name="analysis_retry">إعادة المحاولة</string>
 
     <!-- Final report -->
     <string name="report_title">التقرير النهائي</string>

@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.hima.ai.R
 import com.hima.ai.core.designsystem.component.HimaBottomNavigation
 import com.hima.ai.core.designsystem.component.HimaDivider
@@ -39,6 +40,7 @@ fun MoreScreen(
     onNewReportClick: () -> Unit,
     onReportsClick: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: MoreViewModel = hiltViewModel(),
 ) {
     val colors = LocalHimaColors.current
 
@@ -78,7 +80,10 @@ fun MoreScreen(
 
             HimaSecondaryButton(
                 text = stringResource(R.string.more_sign_out),
-                onClick = onSignOutClick,
+                onClick = {
+                    viewModel.onSignOut()
+                    onSignOutClick()
+                },
                 leadingIconRes = R.drawable.ic_logout,
                 modifier = Modifier.padding(top = 30.dp),
             )

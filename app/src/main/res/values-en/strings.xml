@@ -38,6 +38,11 @@
     <string name="signup_confirm_password_hint">Confirm password</string>
     <string name="signup_submit">Create account</string>
     <string name="signup_have_account">Already have an account?</string>
+    <string name="signup_role_label">Account type</string>
+    <string name="signup_role_field_agent">Field ranger</string>
+    <string name="signup_role_authority">Authority</string>
+    <string name="auth_error_password_mismatch">Passwords don\'t match</string>
+    <string name="auth_error_password_requirements">Password must be at least 8 characters, with an uppercase letter and a number</string>
 
     <!-- Home -->
     <string name="home_greeting">Welcome, Ahmad</string>
@@ -65,6 +70,20 @@
     <string name="new_report_capture">Take a photo</string>
     <string name="new_report_gallery">Choose from gallery</string>
     <string name="new_report_retake">Change photo</string>
+
+    <!-- Capture -->
+    <string name="capture_title">Document the case</string>
+    <string name="capture_use_photo">Use photo</string>
+    <string name="capture_retake">Retake</string>
+    <string name="capture_choose_another">Choose another</string>
+    <string name="capture_permission_title">Camera access needed</string>
+    <string name="capture_permission_body">To document the violation with a photo from the site.</string>
+    <string name="capture_permission_grant">Allow access</string>
+    <string name="capture_permission_settings">Open settings</string>
+    <string name="capture_error">Couldn\'t take the photo. Try again.</string>
+    <string name="cd_shutter">Capture</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_evidence_photo">Evidence photo</string>
     <string name="new_report_location">Location</string>
     <string name="new_report_location_value">Tuwaiq Mountain — Central Region</string>
     <string name="new_report_description">Short description</string>
@@ -82,6 +101,7 @@
     <string name="analysis_kind">Issue type</string>
     <string name="analysis_severity">Severity level</string>
     <string name="analysis_confidence">Confidence</string>
+    <string name="analysis_retry">Try again</string>
 
     <!-- Final report -->
     <string name="report_title">Final report</string>

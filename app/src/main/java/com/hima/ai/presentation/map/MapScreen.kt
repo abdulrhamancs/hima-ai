@@ -1,5 +1,6 @@
 package com.hima.ai.presentation.map
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
@@ -228,6 +229,10 @@ fun MapScreen(
 
     val incident = uiState.selectedIncident
     if (incident != null) {
+        // Without this, system Back skipped the sheet entirely and popped
+        // the Map screen itself — one press took the ranger all the way back
+        // to Home instead of just closing the incident sheet.
+        BackHandler(onBack = viewModel::onDismissSheet)
         val sheetState = rememberModalBottomSheetState()
         ModalBottomSheet(
             onDismissRequest = viewModel::onDismissSheet,
