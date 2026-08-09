@@ -103,6 +103,7 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
         ai_analysis: analysis,
         confidence: analysis.confidence ?? null,
         recommended_action: analysis.recommendation ?? null,
+        environmental_impact: analysis.environmental_impact ?? null,
       })
       .select()
       .single();
@@ -179,6 +180,34 @@ router.get("/", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Something went wrong while loading reports" });
+  }
+});
+
+// GET /reports/stats — current user's reported/resolved counts (for Profile screen)
+router.get("/stats", authMiddleware, async (req, res) => {
+  try {
+    const userClient = createUserClient(req.token);
+
+    const [reportedResult, resolvedResult] = await Promise.all([
+      userClient.from("reports").select("*", { count: "exact", head: true }).eq("user_id", req.user.id),
+      userClient.from("reports").select("*", { count: "exact", head: true }).eq("user_id", req.user.id).eq("status", "RESOLVED"),
+    ]);
+
+    if (reportedResult.error) {
+      return res.status(500).json({ error: reportedResult.error.message });
+    }
+    if (resolvedResult.error) {
+      return res.status(500).json({ error: resolvedResult.error.message });
+    }
+
+    res.json({
+      status: "success",
+      reported_count: reportedResult.count ?? 0,
+      resolved_count: resolvedResult.count ?? 0,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Something went wrong while loading report stats" });
   }
 });
 

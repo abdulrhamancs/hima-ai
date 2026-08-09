@@ -33,6 +33,10 @@ const visionModel = genAI.getGenerativeModel({
           type: "string",
           description: "وصف موجز لما تُظهره الصورة. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
         },
+        environmental_impact: {
+          type: "string",
+          description: "الأثر البيئي المترتب على هذه الحالة (مثل: تؤثر على الحياة الفطرية، تلوث مصادر المياه، تدهور التربة). يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
+        },
         risk_score: {
           type: "number",
           description: "درجة الخطورة من 0 إلى 100. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
@@ -47,7 +51,7 @@ const visionModel = genAI.getGenerativeModel({
         },
         recommendation: {
           type: "string",
-          description: "الإجراء المقترح للتعامل مع الحالة. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
+          description: "الإجراء المستدام المقترح للتعامل مع الحالة. لحالات النفايات والتلوث، فضّل حلول الاقتصاد الدائري (الفرز، إعادة التدوير، إعادة الاستخدام، تقليل الهدر). لحالات الطوارئ (حريق، صيد جائر، حيوان مصاب أو نافق، آفة نباتية)، اذكر الإجراء البيئي المناسب. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
         },
       },
       required: ["is_recognizable", "is_environmental", "confidence"],
@@ -56,7 +60,7 @@ const visionModel = genAI.getGenerativeModel({
 });
 
 const ANALYZE_IMAGE_PROMPT =
-  "حلل هذه الصورة. أولاً حدد هل محتواها واضح بدرجة كافية (is_recognizable)، وهل هي مرتبطة بالمجال البيئي أو المحميات الطبيعية (is_environmental) — يشمل ذلك الحيوانات والنباتات والتربة ومصادر المياه والتلوث والحرائق وأي أضرار أو ظواهر بيئية. إذا كانت الصورة غير واضحة أو غير مرتبطة بالبيئة، لا تكتب وصفًا أو تحليلاً تفصيليًا لها. فقط في حال كانت الصورة واضحة ومرتبطة بالبيئة، صف المشكلة البيئية إن وجدت مثل حريق أو آفة نباتية أو احتطاب أو صيد جائر.";
+  "حلل هذه الصورة. أولاً حدد هل محتواها واضح بدرجة كافية (is_recognizable)، وهل هي مرتبطة بالمجال البيئي أو المحميات الطبيعية (is_environmental) — يشمل ذلك الحيوانات والنباتات والتربة ومصادر المياه والتلوث والحرائق وأي أضرار أو ظواهر بيئية. إذا كانت الصورة غير واضحة أو غير مرتبطة بالبيئة، لا تكتب وصفًا أو تحليلاً تفصيليًا لها. فقط في حال كانت الصورة واضحة ومرتبطة بالبيئة: صف المشكلة البيئية إن وجدت مثل حريق أو آفة نباتية أو احتطاب أو صيد جائر أو نفايات، اذكر الأثر البيئي المترتب عليها، واقترح إجراءً مستدامًا للتعامل معها — يفضَّل حلول الاقتصاد الدائري (فرز، تدوير، إعادة استخدام) لحالات النفايات والتلوث، والإجراء البيئي المناسب لحالات الطوارئ.";
 
 // Shared by /analyze and POST /reports so both call Gemini identically.
 async function analyzeImage(buffer, mimeType) {
