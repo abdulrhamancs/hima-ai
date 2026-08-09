@@ -2,15 +2,21 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { chatModel, visionModel } = require("./config/gemini");
+const { chatModel, analyzeImage } = require("./config/gemini");
 const upload = require("./config/multer");
 const authRoutes = require("./routes/auth");
+const reportsRoutes = require("./routes/reports");
+const firesRoutes = require("./routes/fires");
+const protectedAreasRoutes = require("./routes/protectedAreas");
 const authMiddleware = require("./middleware/authMiddleware");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/auth", authRoutes);
+app.use("/reports", reportsRoutes);
+app.use("/fires", firesRoutes);
+app.use("/protected-areas", protectedAreasRoutes);
 
 app.get("/", (req, res) => {
   res.json({
@@ -45,18 +51,7 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
       return res.status(400).json({ error: "image file is required" });
     }
 
-    const imagePart = {
-      inlineData: {
-        data: req.file.buffer.toString("base64"),
-        mimeType: req.file.mimetype,
-      },
-    };
-
-    const prompt = "حلل هذه الصورة. أولاً حدد هل محتواها واضح بدرجة كافية (is_recognizable)، وهل هي مرتبطة بالمجال البيئي أو المحميات الطبيعية (is_environmental) — يشمل ذلك الحيوانات والنباتات والتربة ومصادر المياه والتلوث والحرائق وأي أضرار أو ظواهر بيئية. إذا كانت الصورة غير واضحة أو غير مرتبطة بالبيئة، لا تكتب وصفًا أو تحليلاً تفصيليًا لها. فقط في حال كانت الصورة واضحة ومرتبطة بالبيئة، صف المشكلة البيئية إن وجدت مثل حريق أو آفة نباتية أو احتطاب أو صيد جائر.";
-
-    const result = await visionModel.generateContent([prompt, imagePart]);
-    const responseText = result.response.text();
-    const analysis = JSON.parse(responseText);
+    const analysis = await analyzeImage(req.file.buffer, req.file.mimetype);
 
     if (!analysis.is_recognizable) {
       return res.status(422).json({
