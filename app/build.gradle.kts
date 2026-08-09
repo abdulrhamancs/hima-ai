@@ -30,23 +30,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        // Empty until you add GEMINI_API_KEY to local.properties (see docs/gemini-integration.md).
-        val geminiKey = localProperties.getProperty("GEMINI_API_KEY", "")
+        val geminiKey = localProperties.getProperty("GEMINI_API_KEY", "AQ.Ab8RN6IJ7jso0ysfA6PictflrGnc3q5IuFTV5HVxR281rUZneQ")
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
 
-        // Supabase project — the Android app talks to Supabase Auth directly
-        // (its anon key is designed to be client-safe; access control is RLS,
-        // not secrecy). Add SUPABASE_URL / SUPABASE_ANON_KEY to local.properties.
-        val supabaseUrl = localProperties.getProperty("SUPABASE_URL", "")
-        val supabaseAnonKey = localProperties.getProperty("SUPABASE_ANON_KEY", "")
+        val supabaseUrl = localProperties.getProperty("SUPABASE_URL", "https://rknqwntfdzzwbxmdkuva.supabase.co")
+        val supabaseAnonKey = localProperties.getProperty("SUPABASE_ANON_KEY", "sb_publishable_UvPdaMQSvxylxm-wPmB2QQ_qrXVM0KM")
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
 
-        // Our Express backend — only for /analyze (Gemini stays server-side).
-        // Defaults to the emulator's route to the host machine's localhost;
-        // override BACKEND_BASE_URL in local.properties for a device or a
-        // deployed backend.
-        val backendBaseUrl = localProperties.getProperty("BACKEND_BASE_URL", "http://10.0.2.2:3000/")
+        val backendBaseUrl = localProperties.getProperty("BACKEND_BASE_URL", "http://10.0.2.2:5000/")
         buildConfigField("String", "BACKEND_BASE_URL", "\"$backendBaseUrl\"")
     }
 
@@ -80,9 +72,6 @@ android {
         }
     }
 
-    // ExoPlayer's raw-resource reader needs res/raw/splash_loop.mp4 stored
-    // uncompressed (byte-exact) to seek and decode continuously — compressed,
-    // it decodes one frame and stalls.
     androidResources {
         noCompress += "mp4"
     }
@@ -132,12 +121,6 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
-
-    // Firebase — added in Phase 2 once google-services.json exists:
-    // implementation(platform(libs.firebase.bom))
-    // implementation(libs.firebase.auth)
-    // implementation(libs.firebase.firestore)
-    // implementation(libs.firebase.storage)
 
     // Test
     testImplementation(libs.junit)
