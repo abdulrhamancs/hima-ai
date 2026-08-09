@@ -30,11 +30,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        val geminiKey = localProperties.getProperty("GEMINI_API_KEY", "AQ.Ab8RN6IJ7jso0ysfA6PictflrGnc3q5IuFTV5HVxR281rUZneQ")
+        // Never hardcode a fallback secret here — it would ship in every APK
+        // and sit in git history. Set these in local.properties (gitignored).
+        val geminiKey = localProperties.getProperty("GEMINI_API_KEY", "")
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
 
-        val supabaseUrl = localProperties.getProperty("SUPABASE_URL", "https://rknqwntfdzzwbxmdkuva.supabase.co")
-        val supabaseAnonKey = localProperties.getProperty("SUPABASE_ANON_KEY", "sb_publishable_UvPdaMQSvxylxm-wPmB2QQ_qrXVM0KM")
+        val supabaseUrl = localProperties.getProperty("SUPABASE_URL", "")
+        val supabaseAnonKey = localProperties.getProperty("SUPABASE_ANON_KEY", "")
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
 
