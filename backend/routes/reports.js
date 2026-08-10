@@ -17,11 +17,9 @@ const EXT_BY_MIME = {
 const TYPE_KEYWORDS = [
   { type: "FIRE", keywords: ["حريق", "دخان", "fire", "smoke"] },
   { type: "ILLEGAL_LOGGING", keywords: ["احتطاب", "قطع أشجار", "قطع الأشجار", "logging", "deforestation"] },
-  { type: "ILLEGAL_HUNTING", keywords: ["صيد جائر", "صيد", "hunting", "poaching"] },
-  { type: "WASTE", keywords: ["نفايات", "تلوث", "قمامة", "waste", "pollution", "garbage"] },
+  { type: "WATER_POLLUTION", keywords: ["تلوث مياه", "تلوث", "تسرب", "pollution", "spill", "contamination"] },
+  { type: "WASTE", keywords: ["مخلفات بلاستيكية", "مخلفات", "نفايات", "قمامة", "waste", "garbage", "plastic"] },
   { type: "PLANT_DISEASE", keywords: ["آفة نباتية", "آفة", "مرض نباتي", "plant disease", "pest"] },
-  { type: "INJURED_ANIMAL", keywords: ["حيوان مصاب", "مصاب", "injured"] },
-  { type: "DEAD_ANIMAL", keywords: ["حيوان نافق", "نافق", "حيوان ميت", "dead animal", "carcass"] },
 ];
 
 function mapIssueTypeToEnum(text) {
