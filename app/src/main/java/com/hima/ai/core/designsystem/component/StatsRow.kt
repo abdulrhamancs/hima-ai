@@ -30,7 +30,14 @@ import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
 
-/** One figure plus its caption. [emphasis] tints the number (used for critical alerts). */
+/**
+ * One figure plus its caption. [emphasis] tints the number (used for critical
+ * alerts).
+ *
+ * Passing [animatedValue] counts the figure up from zero instead of printing it
+ * outright; [value] is still used for the states where there is no number to
+ * count to yet (the em-dash shown before reports load).
+ */
 @Composable
 fun StatItem(
     value: String,
@@ -38,6 +45,7 @@ fun StatItem(
     @DrawableRes iconRes: Int?,
     modifier: Modifier = Modifier,
     emphasis: Color? = null,
+    animatedValue: Int? = null,
 ) {
     val colors = LocalHimaColors.current
     Column(
@@ -56,12 +64,23 @@ fun StatItem(
                 modifier = Modifier.size(17.dp),
             )
         }
-        Text(
-            text = value,
-            style = HimaTextStyles.num.copy(fontSize = 21.sp, fontWeight = FontWeight.SemiBold),
-            color = emphasis ?: colors.ink,
-            modifier = Modifier.padding(top = if (iconRes == null) 0.dp else 4.dp),
-        )
+        val figureModifier = Modifier.padding(top = if (iconRes == null) 0.dp else 4.dp)
+        val figureStyle = HimaTextStyles.num.copy(fontSize = 21.sp, fontWeight = FontWeight.SemiBold)
+        if (animatedValue != null) {
+            AnimatedCount(
+                value = animatedValue,
+                style = figureStyle,
+                color = emphasis ?: colors.ink,
+                modifier = figureModifier,
+            )
+        } else {
+            Text(
+                text = value,
+                style = figureStyle,
+                color = emphasis ?: colors.ink,
+                modifier = figureModifier,
+            )
+        }
         Text(
             text = label,
             style = HimaTextStyles.m.copy(fontSize = 11.5.sp, lineHeight = 16.sp),
@@ -83,6 +102,7 @@ fun StatsRow(
     modifier: Modifier = Modifier,
     emphasisIndex: Int = -1,
     emphasisColor: Color? = null,
+    animatedValues: List<Int> = emptyList(),
 ) {
     val colors = LocalHimaColors.current
     Row(
@@ -114,6 +134,7 @@ fun StatsRow(
                 label = label,
                 iconRes = iconResIds.getOrNull(index),
                 emphasis = if (index == emphasisIndex) emphasisColor else null,
+                animatedValue = animatedValues.getOrNull(index),
                 modifier = Modifier.weight(1f),
             )
         }

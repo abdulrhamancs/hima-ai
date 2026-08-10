@@ -46,6 +46,10 @@
 
     <!-- Home -->
     <string name="home_greeting">مرحباً أحمد</string>
+    <!-- Time-of-day greetings, chosen from the device clock -->
+    <string name="home_greeting_morning">صباح الخير، أحمد</string>
+    <string name="home_greeting_afternoon">مساء الخير، أحمد</string>
+    <string name="home_greeting_evening">مساء الخير، أحمد</string>
     <string name="home_greeting_sub">معاً نحمي طبيعتنا</string>
     <string name="home_environmental_status">حالة البيئة</string>
     <string name="home_environmental_status_value">جيدة</string>
@@ -61,6 +65,7 @@
     <string name="home_stat_open">قيد المعالجة</string>
     <string name="home_stat_done">تمت المعالجة</string>
     <string name="home_stat_critical">تنبيهات حرجة</string>
+    <string name="home_impact_title">توزيع البلاغات</string>
     <string name="home_recent">آخر البلاغات</string>
     <string name="home_view_all">عرض الكل</string>
 
@@ -106,6 +111,16 @@
     <string name="analysis_step_vision">قراءة الصورة</string>
     <string name="analysis_step_context">جمع بيانات الموقع والطقس</string>
     <string name="analysis_step_severity">تجهيز النتيجة</string>
+    <!-- Rotating phases shown under the photo while the model runs -->
+    <string name="analysis_phase_identify">جارٍ تحديد نوع الحالة…</string>
+    <string name="analysis_phase_severity">جارٍ تقييم مستوى الخطورة…</string>
+    <string name="analysis_phase_action">جارٍ تحديد الإجراء المقترح…</string>
+    <!-- Circular-economy flow diagram -->
+    <string name="economy_flow_title">دورة الأثر البيئي</string>
+    <string name="economy_stage_detected">رصد الحالة</string>
+    <string name="economy_stage_analysed">تحليل ذكي</string>
+    <string name="economy_stage_action">الإجراء المقترح</string>
+    <string name="economy_stage_impact">أثر إيجابي</string>
     <string name="analysis_kind">نوع المشكلة</string>
     <string name="analysis_material">المادة</string>
     <string name="analysis_severity">مستوى الخطورة</string>

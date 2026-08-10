@@ -46,6 +46,10 @@
 
     <!-- Home -->
     <string name="home_greeting">Welcome, Ahmad</string>
+    <!-- Time-of-day greetings, chosen from the device clock -->
+    <string name="home_greeting_morning">Good morning, Ahmad</string>
+    <string name="home_greeting_afternoon">Good afternoon, Ahmad</string>
+    <string name="home_greeting_evening">Good evening, Ahmad</string>
     <string name="home_greeting_sub">Together we protect our nature</string>
     <string name="home_environmental_status">Environmental status</string>
     <string name="home_environmental_status_value">Good</string>
@@ -61,6 +65,7 @@
     <string name="home_stat_open">In progress</string>
     <string name="home_stat_done">Resolved</string>
     <string name="home_stat_critical">Critical alerts</string>
+    <string name="home_impact_title">Report breakdown</string>
     <string name="home_recent">Latest reports</string>
     <string name="home_view_all">View all</string>
 
@@ -106,6 +111,16 @@
     <string name="analysis_step_vision">Reading the image</string>
     <string name="analysis_step_context">Collecting location and weather data</string>
     <string name="analysis_step_severity">Preparing the result</string>
+    <!-- Rotating phases shown under the photo while the model runs -->
+    <string name="analysis_phase_identify">Identifying incident type…</string>
+    <string name="analysis_phase_severity">Assessing severity…</string>
+    <string name="analysis_phase_action">Determining recommended action…</string>
+    <!-- Circular-economy flow diagram -->
+    <string name="economy_flow_title">Environmental impact loop</string>
+    <string name="economy_stage_detected">Detected</string>
+    <string name="economy_stage_analysed">AI analysis</string>
+    <string name="economy_stage_action">Action</string>
+    <string name="economy_stage_impact">Impact</string>
     <string name="analysis_kind">Issue type</string>
     <string name="analysis_material">Material</string>
     <string name="analysis_severity">Severity level</string>
