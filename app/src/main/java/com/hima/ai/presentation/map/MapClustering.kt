@@ -14,8 +14,10 @@ private const val CLUSTER_PIXEL_THRESHOLD = 70f
  *  the live MapLibre camera — real geography drives clustering now, not a
  *  fraction of a fake canvas. */
 sealed interface MapMarkerItem {
-    data class Single(val incident: MapIncident, val screenPosition: Offset) : MapMarkerItem
-    data class Cluster(val incidents: List<MapIncident>, val screenPosition: Offset) : MapMarkerItem
+    val screenPosition: Offset
+
+    data class Single(val incident: MapIncident, override val screenPosition: Offset) : MapMarkerItem
+    data class Cluster(val incidents: List<MapIncident>, override val screenPosition: Offset) : MapMarkerItem
 }
 
 /**

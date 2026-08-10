@@ -146,6 +146,26 @@ private fun PulseRing(color: Color, diameter: Dp) {
     )
 }
 
+/** NASA FIRMS colour — deliberately outside the severity ramp (see [severityMarkerColor])
+ *  so a satellite detection can never be mistaken for a ranger-reported incident. */
+private val FireHotspotGlow = Color(0x40FF6A00)
+private val FireHotspotCore = Color(0xFFE8420C)
+
+/**
+ * A NASA FIRMS satellite thermal-hotspot — a small solid dot inside a soft
+ * glow, with neither the white ring nor the category icon [MapMarkerPin]
+ * uses. Deliberately reads as "a different kind of thing" from a report pin,
+ * per the requirement that satellite detections never look like a submitted
+ * report.
+ */
+@Composable
+fun FireHotspotMarker(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(modifier = modifier.size(28.dp).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(28.dp).clip(CircleShape).background(FireHotspotGlow))
+        Box(Modifier.size(12.dp).clip(CircleShape).background(FireHotspotCore))
+    }
+}
+
 /**
  * The ranger's own position — a green dot with a soft breathing halo, distinct
  * from incident markers so it's never mistaken for a report.

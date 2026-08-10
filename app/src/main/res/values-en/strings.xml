@@ -275,6 +275,20 @@
     <string name="map_reports_error_title">Couldn\'t load reports</string>
     <string name="map_reports_error_body">Check your connection and try again</string>
 
+    <!-- NASA FIRMS — satellite fire detections, always distinct from user reports -->
+    <string name="map_filter_nasa_fires">Satellite fires</string>
+    <string name="map_empty_nasa_fires">No fire detections in Saudi Arabia in the last 24 hours</string>
+    <string name="map_fires_error">Couldn\'t load satellite fire detections</string>
+    <string name="map_fire_alert_title">Possible fire detected</string>
+    <string name="map_fire_alert_disclaimer">Satellite detection data — not a user report</string>
+    <string name="map_fire_source_label">Source</string>
+    <string name="map_fire_source_value">NASA FIRMS</string>
+    <string name="map_fire_sensor_label">Sensor</string>
+    <string name="map_fire_sensor_value">VIIRS (NOAA-20)</string>
+    <string name="map_fire_time_label">Date / time</string>
+    <string name="map_fire_location_label">Location</string>
+    <string name="map_fire_confidence_label">Confidence</string>
+
     <!-- More / Settings -->
     <string name="more_title">More</string>
     <string name="more_section_language">Language</string>

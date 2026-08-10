@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -47,6 +49,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,6 +60,7 @@ import com.hima.ai.R
 import com.hima.ai.core.common.relativeTimeLabel
 import com.hima.ai.core.designsystem.component.CurrentLocationMarker
 import com.hima.ai.core.designsystem.component.FilterPillRow
+import com.hima.ai.core.designsystem.component.FireHotspotMarker
 import com.hima.ai.core.designsystem.component.HimaBottomNavigation
 import com.hima.ai.core.designsystem.component.HimaIconButton
 import com.hima.ai.core.designsystem.component.HimaPrimaryButton
@@ -77,10 +81,12 @@ import com.hima.ai.core.map.MapLoadState
 import com.hima.ai.core.map.distanceBearing
 import com.hima.ai.core.map.recenterToDefault
 import com.hima.ai.core.map.recenterToLocation
+import com.hima.ai.domain.model.FireHotspot
 import com.hima.ai.domain.model.IncidentCategory
 import com.hima.ai.domain.model.MapIncident
 import com.hima.ai.domain.model.ReportStatus
 import com.hima.ai.domain.model.Severity
+import com.hima.ai.domain.repository.FireLoadState
 import com.hima.ai.domain.repository.ReportsLoadState
 import kotlinx.coroutines.launch
 import org.maplibre.android.camera.CameraUpdateFactory
@@ -117,7 +123,11 @@ fun MapScreen(
 
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var markerItems by remember { mutableStateOf<List<MapMarkerItem>>(emptyList()) }
+    var fireMarkerItems by remember { mutableStateOf<List<Pair<FireHotspot, Offset>>>(emptyList()) }
     var userLocationScreenPos by remember { mutableStateOf<Offset?>(null) }
+    // The map surface's own pixel size, used to cull markers projected
+    // outside it — see refreshProjections.
+    var mapSizePx by remember { mutableStateOf(IntSize.Zero) }
     // Bumping this forces HimaMapView (and the MapView it owns) to recreate,
     // which is the retry mechanism for a style that failed to load.
     var retryKey by remember { mutableIntStateOf(0) }
@@ -128,7 +138,23 @@ fun MapScreen(
             val point = projection.toScreenLocation(LatLng(incident.latitude, incident.longitude))
             incident to Offset(point.x, point.y)
         }
-        markerItems = clusterIncidents(positioned)
+        // Cluster over every report, then drop the off-screen results: the
+        // counts stay correct for clusters straddling the edge, while the
+        // number of composed markers is bounded by the viewport rather than
+        // by how many reports exist. Same reason the hotspot layer is culled.
+        markerItems = clusterIncidents(positioned).filter { it.screenPosition.isOnScreen(mapSizePx) }
+        // NASA hotspots are never clustered with reports (and not clustered
+        // with each other for this MVP) — a wholly separate visual layer,
+        // never sharing an id space with [MapIncident].
+        fireMarkerItems = if (uiState.showNasaFires) {
+            uiState.fireHotspots.mapNotNull { hotspot ->
+                val point = projection.toScreenLocation(LatLng(hotspot.latitude, hotspot.longitude))
+                val offset = Offset(point.x, point.y)
+                if (offset.isOnScreen(mapSizePx)) hotspot to offset else null
+            }
+        } else {
+            emptyList()
+        }
         userLocationScreenPos = uiState.userLocation?.let { location ->
             val point = projection.toScreenLocation(location)
             Offset(point.x, point.y)
@@ -139,7 +165,7 @@ fun MapScreen(
     // below), not recomposition — but the filter and the user's location can
     // both change the markers/dot without the camera moving, so they need
     // their own trigger.
-    LaunchedEffect(map, uiState.visibleIncidents, uiState.userLocation) {
+    LaunchedEffect(map, uiState.visibleIncidents, uiState.fireHotspots, uiState.showNasaFires, uiState.userLocation) {
         map?.let(::refreshProjections)
     }
 
@@ -210,7 +236,18 @@ fun MapScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        Box(Modifier.weight(1f)) {
+        Box(
+            Modifier
+                .weight(1f)
+                .onSizeChanged { size ->
+                    val previous = mapSizePx
+                    mapSizePx = size
+                    // A rotation/resize changes what counts as on-screen, so
+                    // re-cull immediately instead of waiting for the next
+                    // camera move.
+                    if (previous != size) map?.let(::refreshProjections)
+                },
+        ) {
             // The map's own pixel space must not mirror under Arabic layout —
             // MapLibre's projection always returns LTR screen pixels, so the
             // Compose subtree reading them has to stay LTR too, or markers
@@ -237,6 +274,16 @@ fun MapScreen(
                             val x = with(density) { position.x.toDp() } - 20.dp
                             val y = with(density) { position.y.toDp() } - 20.dp
                             CurrentLocationMarker(modifier = Modifier.absoluteOffset(x = x, y = y))
+                        }
+                        // Drawn before the report pins below so a report
+                        // sitting on top of a hotspot still wins the tap.
+                        fireMarkerItems.forEach { (hotspot, screenPosition) ->
+                            val x = with(density) { screenPosition.x.toDp() } - 14.dp
+                            val y = with(density) { screenPosition.y.toDp() } - 14.dp
+                            FireHotspotMarker(
+                                onClick = { viewModel.onFireHotspotClick(hotspot) },
+                                modifier = Modifier.absoluteOffset(x = x, y = y),
+                            )
                         }
                         markerItems.forEach { item ->
                             when (item) {
@@ -287,18 +334,26 @@ fun MapScreen(
                 )
                 // The base map loaded fine; only the report data failed —
                 // panning/zooming an empty map is still better than nothing.
-                uiState.reportsLoadState is ReportsLoadState.Error -> MapFallbackNotice(
-                    titleRes = R.string.map_reports_error_title,
-                    bodyRes = R.string.map_reports_error_body,
-                    onRetry = viewModel::onRetryReports,
-                    modifier = Modifier.align(Alignment.Center),
-                )
-                uiState.mapLoadState == MapLoadState.Ready &&
-                    uiState.reportsLoadState == ReportsLoadState.Ready &&
-                    uiState.visibleIncidents.isEmpty() -> EmptyFilterNotice(
-                        filter = uiState.filter,
+                // Irrelevant while the ranger is looking at the NASA layer,
+                // which carries no report data at all.
+                uiState.filter != MapFilter.NasaFires &&
+                    uiState.reportsLoadState is ReportsLoadState.Error -> MapFallbackNotice(
+                        titleRes = R.string.map_reports_error_title,
+                        bodyRes = R.string.map_reports_error_body,
+                        onRetry = viewModel::onRetryReports,
                         modifier = Modifier.align(Alignment.Center),
                     )
+                // "Nothing to show" means no hotspots under the NASA layer,
+                // and no matching reports under every other selection.
+                uiState.mapLoadState == MapLoadState.Ready && when (uiState.filter) {
+                    MapFilter.NasaFires ->
+                        uiState.fireLoadState == FireLoadState.Ready && uiState.fireHotspots.isEmpty()
+                    else ->
+                        uiState.reportsLoadState == ReportsLoadState.Ready && uiState.visibleIncidents.isEmpty()
+                } -> EmptyFilterNotice(
+                    filter = uiState.filter,
+                    modifier = Modifier.align(Alignment.Center),
+                )
                 else -> Unit
             }
 
@@ -306,6 +361,14 @@ fun MapScreen(
                 filter = uiState.filter,
                 onFilterSelected = viewModel::onFilterSelected,
                 onMyLocationClick = ::onMyLocationClick,
+                // Only worth nagging about when there's nothing already on
+                // screen to fall back on — a stale-but-present hotspot list
+                // from an earlier successful load says nothing is actually
+                // broken right now.
+                showFireErrorNotice = uiState.showNasaFires &&
+                    uiState.fireLoadState is FireLoadState.Error &&
+                    uiState.fireHotspots.isEmpty(),
+                onRetryFireErrorClick = viewModel::onRetryFires,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .fillMaxWidth()
@@ -352,10 +415,38 @@ fun MapScreen(
             )
         }
     }
+
+    val fireHotspot = uiState.selectedFireHotspot
+    if (fireHotspot != null) {
+        BackHandler(onBack = viewModel::onDismissFireSheet)
+        val fireSheetState = rememberModalBottomSheetState()
+        ModalBottomSheet(
+            onDismissRequest = viewModel::onDismissFireSheet,
+            sheetState = fireSheetState,
+            containerColor = colors.bg,
+            shape = RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet),
+            dragHandle = { IncidentSheetHandle() },
+        ) {
+            FireHotspotSheetContent(fireHotspot)
+        }
+    }
 }
 
 private const val REPORT_FOCUS_ZOOM = 15.0
 private const val REPORT_FOCUS_DURATION_MS = 700
+
+/** Enough slack that a marker anchored just past the edge still animates in
+ *  smoothly rather than popping once its centre crosses the boundary. */
+private const val MARKER_CULL_MARGIN_PX = 96f
+
+/** Whether a projected marker is worth composing. Before the map surface has
+ *  been measured nothing is culled — an unknown viewport must not silently
+ *  hide every marker. */
+private fun Offset.isOnScreen(viewport: IntSize): Boolean {
+    if (viewport == IntSize.Zero) return true
+    return x >= -MARKER_CULL_MARGIN_PX && x <= viewport.width + MARKER_CULL_MARGIN_PX &&
+        y >= -MARKER_CULL_MARGIN_PX && y <= viewport.height + MARKER_CULL_MARGIN_PX
+}
 
 /** Animates the camera to a cluster's geographic centroid at a closer zoom —
  *  the real-map equivalent of the old fraction-space "zoom to point". */
@@ -368,9 +459,11 @@ private fun zoomToCluster(map: MapLibreMap, incidents: List<MapIncident>) {
 
 @Composable
 private fun MapOverlayControls(
-    filter: IncidentCategory?,
+    filter: MapFilter,
     onFilterSelected: (Int) -> Unit,
     onMyLocationClick: () -> Unit,
+    showFireErrorNotice: Boolean,
+    onRetryFireErrorClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalHimaColors.current
@@ -413,18 +506,38 @@ private fun MapOverlayControls(
 
         Spacer(Modifier.height(10.dp))
 
-        val options = IncidentCategory.entries
+        // "All", then one pill per report category, then the NASA layer last —
+        // the order MapFilter.rowIndex/fromRowIndex both encode against.
         FilterPillRow(
-            options = listOf(stringResource(R.string.map_filter_all)) + options.map { stringResource(it.filterLabelRes) },
-            selectedIndex = if (filter == null) 0 else options.indexOf(filter) + 1,
+            options = buildList {
+                add(stringResource(R.string.map_filter_all))
+                IncidentCategory.entries.forEach { add(stringResource(it.filterLabelRes)) }
+                add(stringResource(R.string.map_filter_nasa_fires))
+            },
+            selectedIndex = filter.rowIndex,
             onSelect = onFilterSelected,
         )
+
+        if (showFireErrorNotice) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.map_fires_error),
+                style = HimaTextStyles.m.copy(fontSize = 11.5.sp),
+                color = colors.sage,
+                modifier = Modifier
+                    .shadow(2.dp, RoundedCornerShape(50))
+                    .clip(RoundedCornerShape(50))
+                    .background(colors.bg)
+                    .clickable(onClick = onRetryFireErrorClick)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
     }
 }
 
 /** Shown over the map when the active filter matches no markers. */
 @Composable
-private fun EmptyFilterNotice(filter: IncidentCategory?, modifier: Modifier = Modifier) {
+private fun EmptyFilterNotice(filter: MapFilter, modifier: Modifier = Modifier) {
     val colors = LocalHimaColors.current
     Box(
         modifier = modifier
@@ -435,7 +548,11 @@ private fun EmptyFilterNotice(filter: IncidentCategory?, modifier: Modifier = Mo
     ) {
         Text(
             text = stringResource(
-                if (filter == IncidentCategory.WASTE) R.string.map_empty_waste else R.string.map_empty_filter,
+                when {
+                    filter == MapFilter.NasaFires -> R.string.map_empty_nasa_fires
+                    filter == MapFilter.Category(IncidentCategory.WASTE) -> R.string.map_empty_waste
+                    else -> R.string.map_empty_filter
+                },
             ),
             style = HimaTextStyles.b,
             color = colors.sage,
@@ -578,4 +695,76 @@ private fun IncidentSheetContent(
             modifier = Modifier.padding(top = 22.dp, bottom = 28.dp),
         )
     }
+}
+
+/**
+ * A NASA FIRMS detection's popup — deliberately carries none of
+ * [IncidentSheetContent]'s report chrome (no status, no "View report", no
+ * severity badge): there is no report behind this, only a satellite
+ * observation, and the copy says so explicitly so it's never mistaken for
+ * one (see string map_fire_alert_disclaimer).
+ */
+@Composable
+private fun FireHotspotSheetContent(hotspot: FireHotspot, modifier: Modifier = Modifier) {
+    val colors = LocalHimaColors.current
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "🔥", style = HimaTextStyles.t.copy(fontSize = 26.sp))
+            Text(
+                text = stringResource(R.string.map_fire_alert_title),
+                style = HimaTextStyles.t.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+                color = colors.ink,
+                modifier = Modifier.padding(start = 10.dp),
+            )
+        }
+        Text(
+            text = stringResource(R.string.map_fire_alert_disclaimer),
+            style = HimaTextStyles.m,
+            color = colors.sage,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+
+        FireHotspotDetailRow(stringResource(R.string.map_fire_source_label), stringResource(R.string.map_fire_source_value))
+        FireHotspotDetailRow(stringResource(R.string.map_fire_sensor_label), stringResource(R.string.map_fire_sensor_value))
+        hotspot.acquiredAt?.let { acquiredAt ->
+            FireHotspotDetailRow(stringResource(R.string.map_fire_time_label), relativeTimeLabel(acquiredAt))
+        }
+        FireHotspotDetailRow(stringResource(R.string.map_fire_location_label), formatFireCoordinates(hotspot))
+        hotspot.confidence?.let { confidence ->
+            FireHotspotDetailRow(stringResource(R.string.map_fire_confidence_label), confidence)
+        }
+
+        Spacer(Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun FireHotspotDetailRow(label: String, value: String) {
+    val colors = LocalHimaColors.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(text = label, style = HimaTextStyles.m, color = colors.sage)
+        Text(text = value, style = HimaTextStyles.m.copy(fontWeight = FontWeight.Medium), color = colors.ink)
+    }
+}
+
+private fun formatFireCoordinates(hotspot: FireHotspot): String {
+    val latHemisphere = if (hotspot.latitude >= 0) "N" else "S"
+    val lngHemisphere = if (hotspot.longitude >= 0) "E" else "W"
+    return String.format(
+        java.util.Locale.US,
+        "%.4f°%s, %.4f°%s",
+        kotlin.math.abs(hotspot.latitude),
+        latHemisphere,
+        kotlin.math.abs(hotspot.longitude),
+        lngHemisphere,
+    )
 }

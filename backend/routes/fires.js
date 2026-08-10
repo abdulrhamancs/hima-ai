@@ -39,14 +39,23 @@ function parseFirmsCsv(csvText) {
 router.get("/", authMiddleware, async (req, res) => {
   try {
     if (!process.env.NASA_FIRMS_MAP_KEY) {
-      return res.status(500).json({ error: "NASA_FIRMS_MAP_KEY is missing in .env file" });
+      // The missing-variable name is for the server log only — the client has
+      // no business learning our environment's shape, same as the /analyze
+      // handler's own error policy.
+      console.error("NASA_FIRMS_MAP_KEY is missing in .env file");
+      return res.status(500).json({ error: "Satellite fire detection is not configured on the server" });
     }
 
-    const bbox = req.query.bbox || SAUDI_ARABIA_BBOX;
+    // The area is fixed to Saudi Arabia rather than taken from the query: a
+    // caller-supplied bbox could request the whole planet and drain the
+    // shared NASA quota in a handful of calls.
+    const bbox = SAUDI_ARABIA_BBOX;
 
+    // FIRMS' Area API accepts 1-5 days; this map only ever wants "what is
+    // burning now", so cap at 2 to keep payloads and quota use small.
     let days = parseInt(req.query.days, 10);
     if (!Number.isFinite(days) || days < 1) days = 1;
-    days = Math.min(days, 5); // FIRMS Area API supports a 1-5 day range
+    days = Math.min(days, 2);
 
     const cacheKey = `${bbox}|${SENSOR}|${days}`;
     const cached = cache.get(cacheKey);
@@ -71,9 +80,12 @@ router.get("/", authMiddleware, async (req, res) => {
 
     const csvText = await response.text();
 
-    // FIRMS returns a plaintext error message (not CSV) on invalid MAP_KEY/params
+    // FIRMS returns a plaintext error message (not CSV) on invalid MAP_KEY/params.
+    // That text can echo the request (MAP_KEY included), so it is logged and
+    // never forwarded to the client.
     if (/invalid/i.test(csvText.slice(0, 200))) {
-      return res.status(502).json({ error: "NASA FIRMS rejected the request", detail: csvText.slice(0, 200) });
+      console.error("NASA FIRMS rejected the request:", csvText.slice(0, 200));
+      return res.status(502).json({ error: "NASA FIRMS rejected the request" });
     }
 
     const detections = parseFirmsCsv(csvText);
