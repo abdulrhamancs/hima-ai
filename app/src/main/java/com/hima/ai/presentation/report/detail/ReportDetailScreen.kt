@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hima.ai.R
+import com.hima.ai.core.common.relativeTimeLabel
 import com.hima.ai.core.designsystem.component.HimaDivider
 import com.hima.ai.core.designsystem.component.HimaIconButton
 import com.hima.ai.core.designsystem.component.HimaPrimaryButton
@@ -67,8 +68,8 @@ fun ReportDetailScreen(
     val context = LocalContext.current
 
     val kindText = uiState.kindOverride ?: stringResource(uiState.kindRes)
-    val locationText = stringResource(uiState.locationRes)
-    val timeText = stringResource(uiState.timeRes)
+    val locationText = uiState.locationOverride ?: stringResource(uiState.locationRes)
+    val timeText = uiState.createdAt?.let { relativeTimeLabel(it) } ?: stringResource(uiState.timeRes)
     val shareText = stringResource(R.string.report_share_text, kindText, locationText, timeText, uiState.riskScore)
 
     fun shareReport() {

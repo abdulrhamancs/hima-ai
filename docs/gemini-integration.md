@@ -8,10 +8,10 @@ the report.
 
 ```
 Photo (camera/gallery)
-   └─> upload to Firebase Storage
-        └─> send image (+ prompt) to Gemini API        [data/remote/gemini]
-             └─> parse structured response into AiAnalysis   [data/mapper]
-                  └─> show on AI Investigation → AI Result screens
+   └─> Android sends authenticated multipart request to Hima backend
+        └─> backend sends image (+ context) to Gemini
+             └─> backend returns structured analysis
+                  └─> Android maps it to AiAnalysis and shows the result
 ```
 
 ## What Gemini returns
@@ -32,10 +32,11 @@ prompt template in the data layer, not scattered across the UI.
 
 ## Configuration
 
-- Store the key as `GEMINI_API_KEY` in `local.properties` (git-ignored) and read
-  it through the build config — never hardcode it and never commit it.
-- Keep the model name and generation settings in one place in
-  `data/remote/gemini/` so they're easy to tune.
+- Store `GEMINI_API_KEY` only in the backend's private environment
+  (`backend/.env` locally or the hosting provider's secret configuration).
+- Never expose the key through Android `BuildConfig`, resources, source code,
+  or network requests from the device.
+- Keep the model name, prompt, and response schema in `backend/config/gemini.js`.
 
 ## Error handling & UX
 
@@ -52,6 +53,6 @@ can render loading, success, and error states cleanly.
 
 ## Where it lives in code
 
-- Gemini client + request/response models: `data/remote/gemini/`
-- Mapping to the `AiAnalysis` domain model: `data/mapper/`
-- Use case orchestrating upload + analysis: `domain/usecase/`
+- Gemini client, prompt, and response schema: `backend/config/gemini.js`
+- Android backend API contract: `data/remote/backend/HimaBackendApi.kt`
+- Android response mapping: `data/repository/BackendAiAnalysisRepository.kt`

@@ -94,14 +94,23 @@
     <!-- AI analysis -->
     <string name="analysis_title">تحليل الحالة بالذكاء الاصطناعي</string>
     <string name="analysis_loading_title">جارٍ تحليل الحالة…</string>
-    <string name="analysis_loading_sub">يتم تحليل الصورة وتحديد نوع المخالفة ومستوى الخطورة.</string>
+    <string name="analysis_loading_sub">تحليل الصورة لفهم محتواها.</string>
     <string name="analysis_step_vision">قراءة الصورة</string>
     <string name="analysis_step_context">جمع بيانات الموقع والطقس</string>
-    <string name="analysis_step_severity">تقدير مستوى الخطورة</string>
+    <string name="analysis_step_severity">تجهيز النتيجة</string>
     <string name="analysis_kind">نوع المشكلة</string>
+    <string name="analysis_material">المادة</string>
     <string name="analysis_severity">مستوى الخطورة</string>
+    <string name="analysis_classification">التصنيف</string>
     <string name="analysis_confidence">نسبة الثقة</string>
     <string name="analysis_retry">إعادة المحاولة</string>
+
+    <!-- نتيجة عنصر قابل لإعادة التدوير (الاقتصاد الدائري) -->
+    <string name="recyclable_result_title">نتيجة إعادة التدوير</string>
+    <string name="recyclable_category_label">الفئة</string>
+    <string name="recyclable_classification_label">التصنيف</string>
+    <string name="recyclable_reuse_label">اقتراح لإعادة الاستخدام</string>
+    <string name="recyclable_analyze_another">تحليل صورة أخرى</string>
 
     <!-- Final report -->
     <string name="report_title">التقرير النهائي</string>
@@ -161,6 +170,16 @@
     <string name="incident_waste">نفايات غير نظامية</string>
     <string name="incident_poaching">صيد جائر</string>
     <string name="incident_vehicles">مركبات خارج المسار</string>
+
+    <!-- Real report titles — singular، per IncidentCategory (map_filter_* هي نسخة التصفية بصيغة الجمع) -->
+    <string name="report_type_fire">حريق</string>
+    <string name="report_type_logging">احتطاب غير قانوني</string>
+    <string name="report_type_poaching">صيد جائر</string>
+    <string name="report_type_pollution">نفايات</string>
+    <string name="report_type_wildlife">حادثة حياة برية</string>
+    <string name="report_type_plant_disease">مرض نباتي</string>
+    <string name="report_type_other">حادثة أخرى</string>
+
     <string name="loc_tuwaiq">جبل طويق — المنطقة الوسطى</string>
     <string name="loc_reem">منطقة وادي الريم</string>
     <string name="loc_tuwaiq_short">جبل طويق</string>
@@ -173,6 +192,9 @@
     <string name="time_may9">9 مايو 2025</string>
     <string name="time_may6_evening">6 مايو 2025 — 6:45 م</string>
     <string name="time_may6_noon">6 مايو 2025 — 2:20 م</string>
+    <string name="time_just_now">الآن</string>
+    <string name="time_ago_minutes">منذ %d دقيقة</string>
+    <string name="time_ago_hours">منذ %d ساعة</string>
 
     <!-- Content descriptions (accessibility) -->
     <string name="cd_back">رجوع</string>
@@ -192,8 +214,18 @@
     <string name="map_filter_logging">احتطاب</string>
     <string name="map_filter_poaching">صيد</string>
     <string name="map_filter_pollution">تلوث</string>
+    <string name="map_filter_wildlife">الحياة البرية</string>
+    <string name="map_filter_plant_disease">أمراض نباتية</string>
+    <string name="map_filter_other">أخرى</string>
     <string name="map_view_report">عرض التقرير</string>
     <string name="map_empty_filter">لا توجد بلاغات من هذا النوع حالياً</string>
+    <string name="map_config_missing_title">إعداد الخريطة غير مكتمل</string>
+    <string name="map_config_missing_body">لم يتم ضبط مفتاح خدمة الخرائط بعد</string>
+    <string name="map_error_title">تعذّر تحميل الخريطة</string>
+    <string name="map_error_body">تحقق من اتصالك بالإنترنت وحاول مرة أخرى</string>
+    <string name="map_retry">إعادة المحاولة</string>
+    <string name="map_reports_error_title">تعذّر تحميل البلاغات</string>
+    <string name="map_reports_error_body">تحقق من اتصالك بالإنترنت وحاول مرة أخرى</string>
 
     <!-- More / Settings -->
     <string name="more_title">المزيد</string>

@@ -1,20 +1,41 @@
 package com.hima.ai.presentation.map
 
 import androidx.lifecycle.ViewModel
-import com.hima.ai.data.mock.MockData
+import androidx.lifecycle.viewModelScope
+import com.hima.ai.core.map.MapConfig
+import com.hima.ai.core.map.MapLoadState
 import com.hima.ai.domain.model.IncidentCategory
 import com.hima.ai.domain.model.MapIncident
+import com.hima.ai.domain.repository.ReportsLoadState
+import com.hima.ai.domain.repository.ReportsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.geometry.LatLng
 
 data class MapUiState(
     val incidents: List<MapIncident> = emptyList(),
+    val reportsLoadState: ReportsLoadState = ReportsLoadState.Idle,
     val filter: IncidentCategory? = null,
     val selectedIncident: MapIncident? = null,
+    /** Map *rendering* state (style/tiles) — separate from [reportsLoadState],
+     *  which is about the report *data*; the base map and the markers on it
+     *  load independently. */
+    val mapLoadState: MapLoadState = if (MapConfig.isConfigured) MapLoadState.Loading else MapLoadState.MissingConfig,
+    /** Last camera position this ViewModel instance saw. The map view itself
+     *  is torn down when the ranger navigates away (see [com.hima.ai.core.map.HimaMapView]),
+     *  so without this a returning ranger would always land back on the
+     *  Saudi Arabia default instead of where they were looking. */
+    val lastCameraPosition: CameraPosition? = null,
+    val userLocation: LatLng? = null,
+    val locationPermissionGranted: Boolean = false,
+    /** Denied at least once already, so offer Settings rather than re-prompting into a no-op. */
+    val locationPermissionPermanentlyDenied: Boolean = false,
 ) {
     /** Markers matching the active filter (null = all categories). */
     val visibleIncidents: List<MapIncident>
@@ -22,10 +43,26 @@ data class MapUiState(
 }
 
 @HiltViewModel
-class MapViewModel @Inject constructor() : ViewModel() {
+class MapViewModel @Inject constructor(
+    private val reportsRepository: ReportsRepository,
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(MapUiState(incidents = MockData.mapIncidents))
+    private val _uiState = MutableStateFlow(MapUiState())
     val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
+
+    private var locationDenials = 0
+
+    init {
+        // Report data and map tiles load independently and in parallel —
+        // neither needs to wait on the other.
+        viewModelScope.launch { reportsRepository.mapIncidents.collect { list -> _uiState.update { it.copy(incidents = list) } } }
+        viewModelScope.launch { reportsRepository.loadState.collect { state -> _uiState.update { it.copy(reportsLoadState = state) } } }
+        viewModelScope.launch { reportsRepository.refresh() }
+    }
+
+    fun onRetryReports() {
+        viewModelScope.launch { reportsRepository.refresh(force = true) }
+    }
 
     /** `null` selects "All"; any other index maps to an [IncidentCategory]. */
     fun onFilterSelected(index: Int) {
@@ -39,5 +76,29 @@ class MapViewModel @Inject constructor() : ViewModel() {
 
     fun onDismissSheet() {
         _uiState.update { it.copy(selectedIncident = null) }
+    }
+
+    fun onMapLoadStateChanged(state: MapLoadState) {
+        _uiState.update { it.copy(mapLoadState = state) }
+    }
+
+    fun onCameraMoved(position: CameraPosition) {
+        _uiState.update { it.copy(lastCameraPosition = position) }
+    }
+
+    fun onLocationPermissionResult(granted: Boolean) {
+        if (!granted) locationDenials++
+        _uiState.update {
+            it.copy(
+                locationPermissionGranted = granted,
+                // Android stops showing the system dialog after the second
+                // refusal, so only then is Settings the honest next step.
+                locationPermissionPermanentlyDenied = !granted && locationDenials >= 2,
+            )
+        }
+    }
+
+    fun onLocationReceived(location: LatLng?) {
+        _uiState.update { it.copy(userLocation = location) }
     }
 }

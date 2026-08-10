@@ -18,6 +18,8 @@ const authMiddleware = async (req, res, next) => {
     }
 
     req.user = data.user;
+    // The route's own Supabase calls need this to act as the caller (RLS
+    // checks like `auth.uid() = user_id`) rather than as an anonymous client.
     req.token = token;
     next();
   } catch (error) {
