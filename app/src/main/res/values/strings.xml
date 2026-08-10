@@ -54,6 +54,9 @@
     <string name="home_reserve_status_critical_note">البلاغات الحرجة التي تحتاج إلى متابعة: %1$d</string>
     <string name="home_reserve_status_unknown">—</string>
     <string name="home_reserve_status_loading">جاري تحديث حالة المحمية</string>
+    <string name="home_monitoring_scope">نطاق المحمية</string>
+    <string name="home_resolved_percentage">%1$d%%</string>
+    <string name="home_resolved_percentage_label">نسبة البلاغات المعالجة</string>
     <string name="home_stat_total">إجمالي البلاغات</string>
     <string name="home_stat_open">قيد المعالجة</string>
     <string name="home_stat_done">تمت المعالجة</string>
@@ -195,6 +198,8 @@
     <string name="history_filter_done">تمت المعالجة</string>
     <string name="history_empty">لا توجد بلاغات في هذا التصنيف</string>
     <string name="reports_empty">لا توجد بلاغات حتى الآن</string>
+    <string name="history_empty_description">جرّب تغيير عوامل التصفية أو أضف بلاغاً بيئياً جديداً.</string>
+    <string name="history_empty_action">إضافة بلاغ جديد</string>
     <string name="reports_load_error">تعذّر تحميل البلاغات</string>
 
     <!-- Severity labels -->
@@ -291,10 +296,33 @@
 
     <!-- More / Settings -->
     <string name="more_title">المزيد</string>
+    <string name="more_section_account">الحساب</string>
+    <string name="more_profile_default_name">مستخدم Hima AI</string>
+    <string name="more_profile_reports">بلاغاً متاحاً</string>
+    <string name="more_section_preferences">التفضيلات</string>
     <string name="more_section_language">اللغة</string>
+    <string name="more_section_appearance">المظهر</string>
+    <string name="more_dark_mode">الوضع الداكن</string>
+    <string name="more_dark_mode_description">استخدام المظهر الداكن في التطبيق</string>
+    <string name="more_notifications">التنبيهات</string>
+    <string name="more_notifications_description">استلام تحديثات البلاغات والتنبيهات البيئية</string>
+    <string name="more_section_support">الدعم والمساعدة</string>
+    <string name="more_contact">تواصل معنا</string>
+    <string name="more_faq">الأسئلة الشائعة</string>
+    <string name="more_privacy">سياسة الخصوصية</string>
+    <string name="more_terms">شروط الاستخدام</string>
     <string name="more_section_about">حول التطبيق</string>
     <string name="more_version">الإصدار</string>
+    <string name="more_share_app">مشاركة التطبيق</string>
+    <string name="more_share_text">Hima AI — منصة ذكية لحماية المحميات الطبيعية ودعم القرار البيئي.</string>
+    <string name="more_share_chooser">مشاركة Hima AI</string>
+    <string name="more_rate_app">تقييم التطبيق</string>
     <string name="more_sign_out">تسجيل الخروج</string>
+    <string name="more_sign_out_confirm_title">تسجيل الخروج؟</string>
+    <string name="more_sign_out_confirm_message">ستحتاج إلى تسجيل الدخول مرة أخرى للوصول إلى حسابك وبلاغاتك.</string>
+    <string name="common_cancel">إلغاء</string>
+    <string name="more_coming_soon">قريباً في Hima AI</string>
+    <string name="more_coming_soon_description">هذه الصفحة جاهزة للربط بالمحتوى الرسمي عند توفره.</string>
 
     <!-- Home notifications sheet -->
     <string name="notifications_title">التنبيهات</string>

@@ -1,15 +1,13 @@
 package com.hima.ai.domain.model
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import java.time.Instant
 
 /** Whether a report is still being worked or has been closed out. */
 enum class ReportStatus { UNKNOWN, OPEN, RESOLVED }
 
-/**
- * The illustration drawn as a report's thumbnail. The prototype has no photo
- * assets, so each report kind maps to generated scene art (see `SceneThumbnail`).
- */
+/** The generated scene used whenever a persisted or explicit demo image is unavailable. */
 enum class SceneKind { STUMP, FOREST, FIRE, WATER, WASTE, VALLEY }
 
 /**
@@ -36,6 +34,8 @@ data class ReportSummary(
     val status: ReportStatus,
     val scene: SceneKind,
     val imageUrl: String? = null,
+    /** Local representative photo for static demo data only; persisted reports leave this null. */
+    @DrawableRes val demoImageRes: Int? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
     val reasonOverride: String? = null,

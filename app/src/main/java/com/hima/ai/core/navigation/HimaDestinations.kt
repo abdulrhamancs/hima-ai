@@ -21,6 +21,11 @@ object HimaDestinations {
     const val INVESTIGATION = "investigation"
     const val HISTORY = "history"
     const val MORE = "more"
+    const val MORE_CONTACT = "more/contact"
+    const val MORE_FAQ = "more/faq"
+    const val MORE_PRIVACY = "more/privacy"
+    const val MORE_TERMS = "more/terms"
+    const val MORE_RATE_APP = "more/rate_app"
 
     /** Arg naming which capture path to run — a [com.hima.ai.data.mock.CaptureSource] name. */
     const val CAPTURE_ARG_SOURCE = "source"

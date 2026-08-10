@@ -1,30 +1,42 @@
 package com.hima.ai.core.designsystem.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
-/*
- * Material 3 colour scheme built from the Hima tokens. The design is a single
- * (light, white-first) theme; brand green is the primary action colour.
- * Severity colours are intentionally NOT part of the M3 scheme — they live in
- * HimaColors and are applied only via SeverityBadge.
- */
-private val HimaColorScheme = lightColorScheme(
+/* Material 3 schemes built from Hima's semantic light and dark tokens. */
+private val LightHimaColorScheme = lightColorScheme(
     primary = Green,
-    onPrimary = Color.White,
+    onPrimary = OnHero,
     background = Bg,
     onBackground = Ink,
-    surface = Bg,
+    surface = Surface,
     onSurface = Ink,
     surfaceVariant = Bg2,
     onSurfaceVariant = Ink2,
-    outline = Sage,
+    outline = Beige,
     error = SeverityCritical,
     onError = Color.White,
     tertiary = Beige,
+)
+
+private val DarkHimaColorScheme = darkColorScheme(
+    primary = DarkGreen,
+    onPrimary = DarkGreenDeep,
+    background = DarkBg,
+    onBackground = DarkInk,
+    surface = DarkSurface,
+    onSurface = DarkInk,
+    surfaceVariant = DarkBg2,
+    onSurfaceVariant = DarkInk2,
+    outline = DarkDivider,
+    error = DarkSeverityCritical,
+    onError = DarkInk,
+    tertiary = DarkBeige,
 )
 
 /**
@@ -32,13 +44,17 @@ private val HimaColorScheme = lightColorScheme(
  * [HimaColors] and [Spacing] tokens via composition locals.
  */
 @Composable
-fun HimaTheme(content: @Composable () -> Unit) {
+fun HimaTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
+    val colors = if (darkTheme) DarkHimaColors else LightHimaColors
     CompositionLocalProvider(
-        LocalHimaColors provides LightHimaColors,
+        LocalHimaColors provides colors,
         LocalSpacing provides Spacing(),
     ) {
         MaterialTheme(
-            colorScheme = HimaColorScheme,
+            colorScheme = if (darkTheme) DarkHimaColorScheme else LightHimaColorScheme,
             typography = HimaTypography,
             shapes = HimaShapes,
             content = content,

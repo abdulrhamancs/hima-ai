@@ -44,6 +44,7 @@ class SupabaseReportMappingTest {
         assertEquals(IncidentCategory.WASTE, report.category)
         assertEquals("Plastic bottle", report.titleOverride)
         assertEquals("https://example.test/bottle.jpg", report.imageUrl)
+        assertNull("persisted reports must never receive a local demo image", report.demoImageRes)
         assertEquals(24.7136, report.latitude!!, 0.0)
         assertEquals(46.6753, report.longitude!!, 0.0)
         assertEquals("24.7136°N, 46.6753°E", report.locationOverride)

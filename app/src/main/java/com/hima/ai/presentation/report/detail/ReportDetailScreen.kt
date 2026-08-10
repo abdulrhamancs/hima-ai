@@ -144,6 +144,7 @@ private fun ReportContent(
     ) {
         ReportImage(
             imageUrl = report.imageUrl,
+            demoImageRes = report.demoImageRes,
             scene = report.scene,
             contentDescription = title,
             modifier = Modifier

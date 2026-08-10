@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,7 +61,7 @@ fun StepIndicator(
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.SemiBold,
                     ),
-                    color = if (active) Color.White else colors.sage,
+                    color = if (active) colors.onGreen else colors.sage,
                 )
             }
         }

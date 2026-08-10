@@ -73,12 +73,12 @@ fun HimaPrimaryButton(
             .fillMaxWidth()
             .height(56.dp)
             .scale(pressScale),
-        shape = HimaShapes.medium, // 18dp
+        shape = HimaShapes.medium,
         colors = ButtonDefaults.buttonColors(
             containerColor = colors.green,
-            contentColor = Color.White,
+            contentColor = colors.onGreen,
             disabledContainerColor = colors.beige,
-            disabledContentColor = Color.White,
+            disabledContentColor = colors.onGreen,
         ),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp),
     ) {

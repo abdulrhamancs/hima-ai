@@ -30,7 +30,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -322,7 +321,7 @@ private fun InvestigationInputBar(
             Icon(
                 painter = painterResource(R.drawable.ic_send),
                 contentDescription = stringResource(R.string.cd_send),
-                tint = Color.White,
+                tint = colors.onGreen,
                 modifier = Modifier.size(18.dp),
             )
         }

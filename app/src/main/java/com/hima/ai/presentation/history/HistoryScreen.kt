@@ -7,16 +7,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,21 +36,26 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hima.ai.R
 import com.hima.ai.core.designsystem.component.FilterSegments
+import com.hima.ai.core.designsystem.component.FilterPillRow
 import com.hima.ai.core.designsystem.component.HimaBottomNavigation
 import com.hima.ai.core.designsystem.component.HimaIconButton
+import com.hima.ai.core.designsystem.component.HimaPrimaryButton
 import com.hima.ai.core.designsystem.component.HimaTab
 import com.hima.ai.core.designsystem.component.HimaTextLink
 import com.hima.ai.core.designsystem.component.ReportRow
+import com.hima.ai.core.designsystem.component.ReportRowSkeleton
 import com.hima.ai.core.designsystem.component.ScreenHeader
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
 import com.hima.ai.domain.model.Severity
+import com.hima.ai.domain.model.IncidentCategory
 import com.hima.ai.domain.repository.ReportsLoadState
 
 /**
  * Reports history — one segmented filter over a flat list. Rows are the same
  * component Home uses, so a report looks identical wherever it appears.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     onBackClick: () -> Unit,
@@ -89,62 +99,64 @@ fun HistoryScreen(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
 
+        FilterPillRow(
+            options = buildList {
+                add(stringResource(R.string.history_filter_all))
+                IncidentCategory.entries.forEach { add(stringResource(it.filterLabelRes)) }
+            },
+            selectedIndex = uiState.categoryFilter?.ordinal?.plus(1) ?: 0,
+            onSelect = viewModel::onCategoryFilterSelected,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+        )
+
         val reports = uiState.visibleReports
-        if (uiState.loadState == ReportsLoadState.Loading && uiState.allReports.isEmpty()) {
-            Box(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(color = colors.green, modifier = Modifier.size(26.dp))
-            }
-        } else if (uiState.loadState is ReportsLoadState.Error && uiState.allReports.isEmpty()) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.reports_load_error),
-                    style = HimaTextStyles.b,
-                    color = colors.sage,
-                    textAlign = TextAlign.Center,
+        PullToRefreshBox(
+            isRefreshing = uiState.loadState == ReportsLoadState.Loading && uiState.allReports.isNotEmpty(),
+            onRefresh = viewModel::onRefresh,
+            modifier = Modifier.weight(1f),
+        ) {
+            when {
+                uiState.loadState == ReportsLoadState.Loading && uiState.allReports.isEmpty() -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                        contentPadding = PaddingValues(top = 4.dp, bottom = 20.dp),
+                    ) {
+                        item { repeat(5) { ReportRowSkeleton() } }
+                    }
+                }
+                uiState.loadState is ReportsLoadState.Error && uiState.allReports.isEmpty() -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.reports_load_error),
+                            style = HimaTextStyles.b,
+                            color = colors.sage,
+                            textAlign = TextAlign.Center,
+                        )
+                        HimaTextLink(
+                            text = stringResource(R.string.common_retry),
+                            onClick = viewModel::onRetry,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                }
+                reports.isEmpty() -> ReportsEmptyState(
+                    hasAnyReports = uiState.allReports.isNotEmpty(),
+                    onNewReportClick = onNewReportClick,
                 )
-                HimaTextLink(
-                    text = stringResource(R.string.common_retry),
-                    onClick = viewModel::onRetry,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-        } else if (reports.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(
-                        if (uiState.allReports.isEmpty()) R.string.reports_empty else R.string.history_empty,
-                    ),
-                    style = HimaTextStyles.b,
-                    color = colors.sage,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 20.dp),
-                contentPadding = PaddingValues(top = 4.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                items(reports, key = { it.id }) { report ->
-                    ReportRow(report = report, onClick = { onReportClick(report.id) })
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                        contentPadding = PaddingValues(top = 4.dp, bottom = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        items(reports, key = { it.id }) { report ->
+                            ReportRow(report = report, onClick = { onReportClick(report.id) })
+                        }
+                    }
                 }
             }
         }
@@ -156,6 +168,54 @@ fun HistoryScreen(
             onNewReportClick = onNewReportClick,
             onReportsClick = {},
             onMoreClick = onMoreClick,
+        )
+    }
+}
+
+@Composable
+private fun ReportsEmptyState(
+    hasAnyReports: Boolean,
+    onNewReportClick: () -> Unit,
+) {
+    val colors = LocalHimaColors.current
+    Column(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(colors.green.copy(alpha = if (colors.isDark) 0.18f else 0.10f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_tab_reports),
+                contentDescription = null,
+                tint = colors.green,
+                modifier = Modifier.size(30.dp),
+            )
+        }
+        Text(
+            text = stringResource(if (hasAnyReports) R.string.history_empty else R.string.reports_empty),
+            style = HimaTextStyles.h2,
+            color = colors.ink,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+        Text(
+            text = stringResource(R.string.history_empty_description),
+            style = HimaTextStyles.b,
+            color = colors.sage,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        HimaPrimaryButton(
+            text = stringResource(R.string.history_empty_action),
+            onClick = onNewReportClick,
+            leadingIconRes = R.drawable.ic_plus,
+            modifier = Modifier.width(220.dp).padding(top = 20.dp),
         )
     }
 }

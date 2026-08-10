@@ -54,6 +54,9 @@
     <string name="home_reserve_status_critical_note">Critical reports needing attention: %1$d</string>
     <string name="home_reserve_status_unknown">—</string>
     <string name="home_reserve_status_loading">Updating reserve status</string>
+    <string name="home_monitoring_scope">Reserve area</string>
+    <string name="home_resolved_percentage">%1$d%%</string>
+    <string name="home_resolved_percentage_label">Reports resolved</string>
     <string name="home_stat_total">Total reports</string>
     <string name="home_stat_open">In progress</string>
     <string name="home_stat_done">Resolved</string>
@@ -195,6 +198,8 @@
     <string name="history_filter_done">Resolved</string>
     <string name="history_empty">No reports in this category</string>
     <string name="reports_empty">No reports yet</string>
+    <string name="history_empty_description">Try changing the filters or add a new environmental report.</string>
+    <string name="history_empty_action">Add new report</string>
     <string name="reports_load_error">Couldn’t load reports</string>
 
     <!-- Severity labels -->
@@ -291,10 +296,33 @@
 
     <!-- More / Settings -->
     <string name="more_title">More</string>
+    <string name="more_section_account">Account</string>
+    <string name="more_profile_default_name">Hima AI user</string>
+    <string name="more_profile_reports">reports available</string>
+    <string name="more_section_preferences">Preferences</string>
     <string name="more_section_language">Language</string>
+    <string name="more_section_appearance">Appearance</string>
+    <string name="more_dark_mode">Dark mode</string>
+    <string name="more_dark_mode_description">Use the dark appearance throughout the app</string>
+    <string name="more_notifications">Notifications</string>
+    <string name="more_notifications_description">Receive report updates and environmental alerts</string>
+    <string name="more_section_support">Support &amp; Help</string>
+    <string name="more_contact">Contact us</string>
+    <string name="more_faq">Frequently asked questions</string>
+    <string name="more_privacy">Privacy policy</string>
+    <string name="more_terms">Terms of service</string>
     <string name="more_section_about">About</string>
     <string name="more_version">Version</string>
+    <string name="more_share_app">Share the app</string>
+    <string name="more_share_text">Hima AI — intelligent environmental monitoring for natural reserves.</string>
+    <string name="more_share_chooser">Share Hima AI</string>
+    <string name="more_rate_app">Rate the app</string>
     <string name="more_sign_out">Sign out</string>
+    <string name="more_sign_out_confirm_title">Sign out?</string>
+    <string name="more_sign_out_confirm_message">You’ll need to sign in again to access your account and reports.</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="more_coming_soon">Coming soon in Hima AI</string>
+    <string name="more_coming_soon_description">This page is ready to connect to the official content when it becomes available.</string>
 
     <!-- Home notifications sheet -->
     <string name="notifications_title">Notifications</string>

@@ -45,7 +45,7 @@ fun SectionHeader(
             Text(
                 text = actionLabel,
                 style = HimaTextStyles.m.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Medium),
-                color = colors.sage,
+                color = colors.green,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .clickable(onClick = onActionClick)
@@ -63,7 +63,7 @@ fun HimaDivider(modifier: Modifier = Modifier) {
         modifier
             .fillMaxWidth()
             .height(1.dp)
-            .background(colors.bg2),
+            .background(colors.divider),
     )
 }
 

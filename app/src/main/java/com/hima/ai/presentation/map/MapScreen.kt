@@ -235,7 +235,7 @@ fun MapScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().background(colors.bg)) {
         Box(
             Modifier
                 .weight(1f)
@@ -270,6 +270,16 @@ fun MapScreen(
                     }
 
                     if (uiState.mapLoadState == MapLoadState.Ready) {
+                        // MapTiler's outdoor style is intentionally shared by both themes.
+                        // A translucent Hima surface makes it comfortable in dark mode
+                        // without changing providers, API configuration, or map behavior.
+                        if (colors.isDark) {
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(colors.bg.copy(alpha = 0.38f)),
+                            )
+                        }
                         userLocationScreenPos?.let { position ->
                             val x = with(density) { position.x.toDp() } - 20.dp
                             val y = with(density) { position.y.toDp() } - 20.dp
@@ -401,7 +411,7 @@ fun MapScreen(
         ModalBottomSheet(
             onDismissRequest = dismissSelection,
             sheetState = sheetState,
-            containerColor = colors.bg,
+            containerColor = colors.surface,
             shape = RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet),
             dragHandle = { IncidentSheetHandle() },
         ) {
@@ -423,7 +433,7 @@ fun MapScreen(
         ModalBottomSheet(
             onDismissRequest = viewModel::onDismissFireSheet,
             sheetState = fireSheetState,
-            containerColor = colors.bg,
+            containerColor = colors.surface,
             shape = RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet),
             dragHandle = { IncidentSheetHandle() },
         ) {
@@ -476,7 +486,7 @@ private fun MapOverlayControls(
                 modifier = Modifier
                     .shadow(3.dp, RoundedCornerShape(50))
                     .clip(RoundedCornerShape(50))
-                    .background(colors.bg)
+                    .background(colors.surface)
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(7.dp),
@@ -527,7 +537,7 @@ private fun MapOverlayControls(
                 modifier = Modifier
                     .shadow(2.dp, RoundedCornerShape(50))
                     .clip(RoundedCornerShape(50))
-                    .background(colors.bg)
+                    .background(colors.surface)
                     .clickable(onClick = onRetryFireErrorClick)
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
@@ -543,7 +553,7 @@ private fun EmptyFilterNotice(filter: MapFilter, modifier: Modifier = Modifier) 
         modifier = modifier
             .shadow(3.dp, RoundedCornerShape(HimaRadius.field))
             .clip(RoundedCornerShape(HimaRadius.field))
-            .background(colors.bg)
+            .background(colors.surface)
             .padding(horizontal = 18.dp, vertical = 14.dp),
     ) {
         Text(
@@ -577,7 +587,7 @@ private fun MapFallbackNotice(
             .padding(horizontal = 36.dp)
             .shadow(3.dp, RoundedCornerShape(HimaRadius.field))
             .clip(RoundedCornerShape(HimaRadius.field))
-            .background(colors.bg)
+            .background(colors.surface)
             .padding(horizontal = 24.dp, vertical = 22.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -619,7 +629,7 @@ private fun IncidentSheetHandle(modifier: Modifier = Modifier) {
             .padding(top = 10.dp, bottom = 4.dp)
             .size(width = 36.dp, height = 4.dp)
             .clip(RoundedCornerShape(50))
-            .background(colors.beige),
+            .background(colors.divider),
     )
 }
 
@@ -640,6 +650,7 @@ private fun IncidentSheetContent(
         Row(verticalAlignment = Alignment.CenterVertically) {
             ReportImage(
                 imageUrl = report.imageUrl,
+                demoImageRes = report.demoImageRes,
                 scene = report.scene,
                 contentDescription = report.titleOverride ?: stringResource(report.titleRes),
                 modifier = Modifier

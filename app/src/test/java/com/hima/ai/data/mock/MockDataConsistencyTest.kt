@@ -1,5 +1,7 @@
 package com.hima.ai.data.mock
 
+import com.hima.ai.R
+import com.hima.ai.domain.model.IncidentCategory
 import com.hima.ai.domain.model.ReportStatus
 import com.hima.ai.domain.model.Severity
 import org.junit.Assert.assertEquals
@@ -71,6 +73,30 @@ class MockDataConsistencyTest {
             MockData.criticalAlerts,
         )
         assertEquals(MockData.totalReports, MockData.openReports + MockData.resolvedReports)
+    }
+
+    @Test
+    fun `each demo report has one explicit and unique local photograph`() {
+        val expected = mapOf(
+            "h1" to (IncidentCategory.LOGGING to R.drawable.report_tree_cutting),
+            "h2" to (IncidentCategory.LOGGING to R.drawable.report_firewood),
+            "h3" to (IncidentCategory.FIRE to R.drawable.report_wildfire),
+            "h4" to (IncidentCategory.POLLUTION to R.drawable.report_water_pollution),
+            "h5" to (IncidentCategory.WASTE to R.drawable.report_illegal_waste),
+        )
+
+        assertEquals(expected.keys, MockData.allReports.map { it.id }.toSet())
+        MockData.allReports.forEach { report ->
+            val (category, drawable) = requireNotNull(expected[report.id])
+            assertEquals(category, report.category)
+            assertEquals(drawable, report.demoImageRes)
+            assertNull("demo rows must not pretend to have a persisted image URL", report.imageUrl)
+        }
+        assertEquals(
+            "each demo category needs a distinct photograph",
+            MockData.allReports.size,
+            MockData.allReports.map { it.demoImageRes }.toSet().size,
+        )
     }
 
 }

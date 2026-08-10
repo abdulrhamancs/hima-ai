@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
+const { filterSaudiDetections, parseFirmsCsv } = require("../domain/fireDetection");
 
 // west,south,east,north — covers Saudi Arabia's territory
 const SAUDI_ARABIA_BBOX = "34.5,16.0,55.7,32.5";
@@ -9,31 +10,6 @@ const SENSOR = "VIIRS_NOAA20_NRT";
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes, well under FIRMS' rate limit
 
 const cache = new Map(); // key -> { data, cachedAt }
-
-function parseFirmsCsv(csvText) {
-  const lines = csvText.trim().split("\n");
-  if (lines.length <= 1) return [];
-
-  const headers = lines[0].split(",").map((h) => h.trim());
-  return lines.slice(1).map((line) => {
-    const values = line.split(",");
-    const row = {};
-    headers.forEach((header, i) => {
-      row[header] = values[i] !== undefined ? values[i].trim() : null;
-    });
-
-    return {
-      latitude: parseFloat(row.latitude),
-      longitude: parseFloat(row.longitude),
-      // VIIRS reports bright_ti4, MODIS reports brightness — normalize to one field
-      brightness: parseFloat(row.bright_ti4 ?? row.brightness),
-      confidence: row.confidence,
-      acq_date: row.acq_date,
-      acq_time: row.acq_time,
-      satellite: row.satellite,
-    };
-  });
-}
 
 // GET /fires — satellite fire detections (NOT confirmed fires) over Saudi Arabia, cached
 router.get("/", authMiddleware, async (req, res) => {
@@ -88,7 +64,10 @@ router.get("/", authMiddleware, async (req, res) => {
       return res.status(502).json({ error: "NASA FIRMS rejected the request" });
     }
 
-    const detections = parseFirmsCsv(csvText);
+    // FIRMS' Area API only accepts rectangles, so the response also contains
+    // parts of Jordan, Iraq, Kuwait, Yemen, Oman and the Gulf. Filter against
+    // Natural Earth's Saudi ADM0 polygon before caching or returning anything.
+    const detections = filterSaudiDetections(parseFirmsCsv(csvText));
     cache.set(cacheKey, { data: detections, cachedAt: Date.now() });
 
     res.json({

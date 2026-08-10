@@ -23,6 +23,7 @@ enum class HistoryFilter { ALL, OPEN, RESOLVED }
 data class HistoryUiState(
     val filter: HistoryFilter = HistoryFilter.ALL,
     val severityFilter: Severity? = null,
+    val categoryFilter: IncidentCategory? = null,
     val allReports: List<ReportSummary> = emptyList(),
     val loadState: ReportsLoadState = ReportsLoadState.Idle,
 ) {
@@ -33,15 +34,19 @@ data class HistoryUiState(
                 HistoryFilter.OPEN -> allReports.filter { it.status == ReportStatus.OPEN }
                 HistoryFilter.RESOLVED -> allReports.filter { it.status == ReportStatus.RESOLVED }
             }
-            return severityFilter?.let { severity ->
+            val bySeverity = severityFilter?.let { severity ->
                 byStatus.filter { it.category != IncidentCategory.WASTE && it.severity == severity }
             } ?: byStatus
+            return categoryFilter?.let { category ->
+                bySeverity.filter { it.category == category }
+            } ?: bySeverity
         }
 }
 
 private data class HistorySelection(
     val filter: HistoryFilter = HistoryFilter.ALL,
     val severity: Severity? = null,
+    val category: IncidentCategory? = null,
 )
 
 @HiltViewModel
@@ -59,6 +64,7 @@ class HistoryViewModel @Inject constructor(
         HistoryUiState(
             filter = selected.filter,
             severityFilter = selected.severity,
+            categoryFilter = selected.category,
             allReports = reports,
             loadState = loadState,
         )
@@ -78,10 +84,30 @@ class HistoryViewModel @Inject constructor(
     }
 
     fun onSeverityFilterSelected(severity: Severity?) {
-        selection.update { it.copy(severity = severity?.takeUnless { it == Severity.UNKNOWN }) }
+        val selectedSeverity = severity?.takeUnless { it == Severity.UNKNOWN }
+        selection.update {
+            it.copy(
+                severity = selectedSeverity,
+                category = if (selectedSeverity != null && it.category == IncidentCategory.WASTE) null else it.category,
+            )
+        }
+    }
+
+    fun onCategoryFilterSelected(index: Int) {
+        val category = if (index == 0) null else IncidentCategory.entries.getOrNull(index - 1)
+        selection.update {
+            it.copy(
+                category = category,
+                severity = if (category == IncidentCategory.WASTE) null else it.severity,
+            )
+        }
     }
 
     fun onRetry() {
+        viewModelScope.launch { reportsRepository.refresh(force = true) }
+    }
+
+    fun onRefresh() {
         viewModelScope.launch { reportsRepository.refresh(force = true) }
     }
 }

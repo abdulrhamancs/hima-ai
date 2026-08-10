@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -56,8 +57,13 @@ fun HimaIconButton(
         modifier = modifier
             .size(MinTouchTarget)
             .scale(pressScale)
+            .shadow(
+                elevation = if (filled && !colors.isDark) 4.dp else 0.dp,
+                shape = RoundedCornerShape(HimaRadius.icon),
+                clip = false,
+            )
             .clip(RoundedCornerShape(HimaRadius.icon))
-            .background(if (filled) colors.bg2 else Color.Transparent)
+            .background(if (filled) colors.surface else Color.Transparent)
             .clickable(interactionSource = interactionSource, indication = LocalIndication.current, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

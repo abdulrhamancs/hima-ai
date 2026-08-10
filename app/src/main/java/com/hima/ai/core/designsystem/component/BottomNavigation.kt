@@ -8,11 +8,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -22,7 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -58,8 +64,15 @@ fun HimaBottomNavigation(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(BottomNavHeight)
-            .background(colors.bg)
+            .heightIn(min = BottomNavHeight)
+            .shadow(
+                elevation = 14.dp,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                clip = false,
+            )
+            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .background(colors.surface)
+            .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
             .padding(top = 9.dp, start = 6.dp, end = 6.dp),
         verticalAlignment = Alignment.Top,
     ) {
@@ -104,7 +117,7 @@ private fun TabItem(
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalHimaColors.current
-    val tint = if (selected) colors.ink else colors.sage
+    val tint = if (selected) colors.green else colors.sage
     val interactionSource = remember { MutableInteractionSource() }
     val pressScale = rememberPressScale(interactionSource)
     Column(
@@ -116,12 +129,20 @@ private fun TabItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        Icon(
-            painter = painterResource(iconRes),
-            contentDescription = null,
-            tint = tint,
-            modifier = Modifier.size(22.dp),
-        )
+        Box(
+            modifier = Modifier
+                .size(width = 40.dp, height = 30.dp)
+                .clip(RoundedCornerShape(50))
+                .background(colors.green.copy(alpha = if (selected) 0.14f else 0f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(22.dp),
+            )
+        }
         Text(
             text = label,
             style = HimaTextStyles.m.copy(
@@ -148,28 +169,26 @@ private fun NewReportAction(onClick: () -> Unit, modifier: Modifier = Modifier) 
     ) {
         Box(
             modifier = Modifier
-                // Raised so the primary action breaks the bar's top edge.
-                .offset(y = (-13).dp)
+                // Keep the action visually prominent without drawing outside
+                // the clipped navigation surface, which would cut its top.
+                .offset(y = (-4).dp)
                 .size(52.dp)
                 .scale(pressScale)
-                .clip(RoundedCornerShape(20.dp))
+                .shadow(
+                    elevation = if (colors.isDark) 2.dp else 7.dp,
+                    shape = CircleShape,
+                    clip = false,
+                )
+                .clip(CircleShape)
                 .background(colors.green),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_plus),
                 contentDescription = stringResource(R.string.cd_new_report),
-                tint = Color.White,
+                tint = colors.onGreen,
                 modifier = Modifier.size(24.dp),
             )
         }
-        Text(
-            text = stringResource(R.string.tab_new_report),
-            style = HimaTextStyles.m.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Medium),
-            color = colors.ink2,
-            maxLines = 1,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 5.dp),
-        )
     }
 }

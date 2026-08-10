@@ -4,14 +4,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
-/** Named corner radii from the "White-first system" prototype. */
+/** Named radii on the shared 4dp-oriented Hima shape scale. */
 object HimaRadius {
-    val chip = 9.dp
+    val chip = 12.dp
     val icon = 12.dp
-    val field = 16.dp
-    val button = 18.dp
-    val thumb = 14.dp
-    val hero = 22.dp
+    val field = 14.dp
+    val button = 14.dp
+    val thumb = 12.dp
+    val hero = 20.dp
     val card = 20.dp
     val sheet = 24.dp
 }

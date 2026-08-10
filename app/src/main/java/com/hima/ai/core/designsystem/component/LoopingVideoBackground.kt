@@ -1,11 +1,13 @@
 package com.hima.ai.core.designsystem.component
 
 import android.view.LayoutInflater
+import android.widget.FrameLayout
 import androidx.annotation.RawRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -57,10 +59,19 @@ fun LoopingVideoBackground(@RawRes videoRes: Int, modifier: Modifier = Modifier)
     }
 
     AndroidView(
-        modifier = modifier,
+        // Keep the native video surface behind Compose content for both
+        // rendering and hit-testing; otherwise it can swallow taps on the
+        // splash CTA and language control while remaining visually behind it.
+        modifier = modifier.zIndex(-1f),
         factory = { ctx ->
+            val inflationParent = FrameLayout(ctx)
             val playerView = LayoutInflater.from(ctx)
-                .inflate(R.layout.player_view_texture, null) as PlayerView
+                .inflate(R.layout.player_view_texture, inflationParent, false) as PlayerView
+            // PlayerView handles touch gestures even with its controller hidden.
+            // Disable the native view for input so Compose controls layered over
+            // the video (CTA and language toggle) receive taps normally.
+            playerView.isEnabled = false
+            playerView.isFocusable = false
             playerView.player = exoPlayer
             playerView
         },

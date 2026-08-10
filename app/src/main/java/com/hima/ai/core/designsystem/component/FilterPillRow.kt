@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,12 +55,12 @@ private fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit) {
             fontSize = 13.5.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
         ),
-        color = if (selected) Color.White else colors.ink,
+        color = if (selected) colors.onGreen else colors.ink,
         maxLines = 1,
         modifier = Modifier
-            .shadow(if (selected) 0.dp else 3.dp, RoundedCornerShape(50))
+            .shadow(if (selected || colors.isDark) 0.dp else 3.dp, RoundedCornerShape(50))
             .clip(RoundedCornerShape(50))
-            .background(if (selected) colors.green else colors.bg)
+            .background(if (selected) colors.green else colors.surface)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
     )

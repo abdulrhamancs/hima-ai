@@ -55,4 +55,8 @@ class HomeViewModel @Inject constructor(
     fun onRetry() {
         viewModelScope.launch { reportsRepository.refresh(force = true) }
     }
+
+    fun onRefresh() {
+        viewModelScope.launch { reportsRepository.refresh(force = true) }
+    }
 }

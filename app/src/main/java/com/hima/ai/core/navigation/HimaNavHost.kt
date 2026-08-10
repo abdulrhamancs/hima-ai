@@ -12,6 +12,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.hima.ai.R
 import com.hima.ai.core.designsystem.theme.HimaEasing
 import com.hima.ai.core.designsystem.theme.HimaMotionDuration
 import com.hima.ai.data.mock.CaptureSource
@@ -22,6 +23,7 @@ import com.hima.ai.presentation.history.HistoryScreen
 import com.hima.ai.presentation.home.HomeScreen
 import com.hima.ai.presentation.map.MapScreen
 import com.hima.ai.presentation.more.MoreScreen
+import com.hima.ai.presentation.more.ComingSoonScreen
 import com.hima.ai.presentation.report.analysis.AnalysisScreen
 import com.hima.ai.presentation.report.capture.CaptureScreen
 import com.hima.ai.presentation.report.detail.ReportDetailScreen
@@ -100,10 +102,8 @@ fun HimaNavHost(
         composable(HimaDestinations.SPLASH) { entry ->
             SplashScreen(
                 onGetStarted = {
-                    if (entry.isCurrent()) {
-                        navController.navigate(HimaDestinations.LOGIN) {
-                            popUpTo(HimaDestinations.SPLASH) { inclusive = true }
-                        }
+                    navController.navigate(HimaDestinations.LOGIN) {
+                        popUpTo(HimaDestinations.SPLASH) { inclusive = true }
                     }
                 },
             )
@@ -142,6 +142,7 @@ fun HimaNavHost(
                 onReportClick = { id -> push(entry, HimaDestinations.report(id)) },
                 onViewAllClick = { goTab(entry, HimaDestinations.HISTORY) },
                 onMapClick = { goTab(entry, HimaDestinations.MAP) },
+                onViewReportOnMapClick = { id -> push(entry, HimaDestinations.map(id)) },
                 onMoreClick = { goTab(entry, HimaDestinations.MORE) },
             )
         }
@@ -286,7 +287,28 @@ fun HimaNavHost(
                 onMapClick = { goTab(entry, HimaDestinations.MAP) },
                 onNewReportClick = { push(entry, HimaDestinations.NEW_REPORT) },
                 onReportsClick = { goTab(entry, HimaDestinations.HISTORY) },
+                onContactClick = { push(entry, HimaDestinations.MORE_CONTACT) },
+                onFaqClick = { push(entry, HimaDestinations.MORE_FAQ) },
+                onPrivacyClick = { push(entry, HimaDestinations.MORE_PRIVACY) },
+                onTermsClick = { push(entry, HimaDestinations.MORE_TERMS) },
+                onRateAppClick = { push(entry, HimaDestinations.MORE_RATE_APP) },
             )
+        }
+
+        composable(HimaDestinations.MORE_CONTACT) { entry ->
+            ComingSoonScreen(titleRes = R.string.more_contact, onBackClick = { back(entry) })
+        }
+        composable(HimaDestinations.MORE_FAQ) { entry ->
+            ComingSoonScreen(titleRes = R.string.more_faq, onBackClick = { back(entry) })
+        }
+        composable(HimaDestinations.MORE_PRIVACY) { entry ->
+            ComingSoonScreen(titleRes = R.string.more_privacy, onBackClick = { back(entry) })
+        }
+        composable(HimaDestinations.MORE_TERMS) { entry ->
+            ComingSoonScreen(titleRes = R.string.more_terms, onBackClick = { back(entry) })
+        }
+        composable(HimaDestinations.MORE_RATE_APP) { entry ->
+            ComingSoonScreen(titleRes = R.string.more_rate_app, onBackClick = { back(entry) })
         }
     }
 }

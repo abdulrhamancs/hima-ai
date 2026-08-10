@@ -17,9 +17,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +29,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,6 +45,7 @@ import com.hima.ai.core.designsystem.component.HimaTab
 import com.hima.ai.core.designsystem.component.HimaTextLink
 import com.hima.ai.core.designsystem.component.LanguageToggle
 import com.hima.ai.core.designsystem.component.ReportRow
+import com.hima.ai.core.designsystem.component.ReportRowSkeleton
 import com.hima.ai.core.designsystem.component.SectionHeader
 import com.hima.ai.core.designsystem.component.StatsRow
 import com.hima.ai.core.designsystem.component.StatusIndicator
@@ -49,12 +54,9 @@ import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
 import com.hima.ai.domain.model.ReportSummary
 import com.hima.ai.domain.repository.ReportsLoadState
+import kotlin.math.roundToInt
 
-/**
- * Home — greeting, reserve health, compact counters, and the latest reports.
- * Sections are separated by whitespace and one warm surface rather than being
- * wrapped in individual cards.
- */
+/** Home — live reserve health, real repository counters, and latest reports. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -62,6 +64,7 @@ fun HomeScreen(
     onReportClick: (String) -> Unit,
     onViewAllClick: () -> Unit,
     onMapClick: () -> Unit,
+    onViewReportOnMapClick: (String) -> Unit,
     onMoreClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
@@ -70,18 +73,31 @@ fun HomeScreen(
     val colors = LocalHimaColors.current
     var showNotifications by remember { mutableStateOf(false) }
     val hasReportData = uiState.loadState == ReportsLoadState.Ready || uiState.totalReports > 0
+    val resolvedPercentage = calculateResolvedReportsPercentage(
+        totalReports = uiState.totalReports,
+        resolvedReports = uiState.resolvedReports,
+        hasReportData = hasReportData,
+    )
+    val monitoredLocation = uiState.recentReports.firstOrNull()?.let { report ->
+        report.locationOverride ?: stringResource(report.locationRes)
+    } ?: stringResource(R.string.home_monitoring_scope)
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(colors.bg),
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(top = 58.dp, bottom = 24.dp),
+        PullToRefreshBox(
+            isRefreshing = uiState.loadState == ReportsLoadState.Loading && uiState.recentReports.isNotEmpty(),
+            onRefresh = viewModel::onRefresh,
+            modifier = Modifier.weight(1f),
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 18.dp),
+                contentPadding = PaddingValues(top = 52.dp, bottom = 26.dp),
+            ) {
             item {
                 HomeHeader(
                     onMenuClick = onMoreClick,
@@ -107,12 +123,18 @@ fun HomeScreen(
                         )
                         else -> stringResource(R.string.home_reserve_status_note)
                     },
+                    location = monitoredLocation,
+                    resolvedPercentage = resolvedPercentage,
+                    resolvedPercentageLabel = resolvedPercentage?.let {
+                        stringResource(R.string.home_resolved_percentage, it)
+                    } ?: stringResource(R.string.home_reserve_status_unknown),
+                    resolvedLabel = stringResource(R.string.home_resolved_percentage_label),
                     modifier = Modifier.padding(top = 18.dp),
                 )
             }
 
             item {
-                val unavailable = "—"
+                val unavailable = stringResource(R.string.home_reserve_status_unknown)
                 StatsRow(
                     items = listOf(
                         (if (hasReportData) uiState.totalReports.toString() else unavailable) to stringResource(R.string.home_stat_total),
@@ -120,9 +142,15 @@ fun HomeScreen(
                         (if (hasReportData) uiState.resolvedReports.toString() else unavailable) to stringResource(R.string.home_stat_done),
                         (if (hasReportData) uiState.criticalAlerts.toString() else unavailable) to stringResource(R.string.home_stat_critical),
                     ),
+                    iconResIds = listOf(
+                        R.drawable.ic_tab_reports,
+                        R.drawable.ic_clock,
+                        R.drawable.ic_check,
+                        R.drawable.ic_bell,
+                    ),
                     emphasisIndex = 3,
                     emphasisColor = colors.severityCritical,
-                    modifier = Modifier.padding(top = 18.dp),
+                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
 
@@ -136,13 +164,8 @@ fun HomeScreen(
 
             when {
                 uiState.loadState == ReportsLoadState.Loading && uiState.recentReports.isEmpty() -> item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 30.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(color = colors.green, modifier = Modifier.size(24.dp))
+                    Column {
+                        repeat(3) { ReportRowSkeleton() }
                     }
                 }
                 uiState.loadState is ReportsLoadState.Error && uiState.recentReports.isEmpty() -> item {
@@ -156,11 +179,16 @@ fun HomeScreen(
                     ReportsNotice(text = stringResource(R.string.reports_empty))
                 }
                 else -> items(uiState.recentReports, key = { it.id }) { report ->
-                    ReportRow(report = report, onClick = { onReportClick(report.id) })
+                    ReportRow(
+                        report = report,
+                        onClick = { onReportClick(report.id) },
+                        onViewOnMapClick = { onViewReportOnMapClick(report.id) },
+                    )
                 }
             }
 
             item { Spacer(Modifier.height(8.dp)) }
+            }
         }
 
         HimaBottomNavigation(
@@ -223,6 +251,24 @@ private fun HomeHeader(
             onClick = onMenuClick,
             filled = true,
         )
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .shadow(
+                    elevation = if (colors.isDark) 1.dp else 5.dp,
+                    shape = RoundedCornerShape(15.dp),
+                )
+                .clip(RoundedCornerShape(15.dp))
+                .background(colors.surface),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_hima_mark),
+                contentDescription = null,
+                tint = colors.green,
+                modifier = Modifier.size(31.dp),
+            )
+        }
         Column(Modifier.weight(1f)) {
             Text(
                 text = stringResource(R.string.home_greeting),
@@ -263,7 +309,7 @@ private fun NotificationsSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(),
-        containerColor = colors.bg,
+        containerColor = colors.surface,
         shape = RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet),
         modifier = modifier,
     ) {
@@ -296,4 +342,14 @@ private fun NotificationsSheet(
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+internal fun calculateResolvedReportsPercentage(
+    totalReports: Int,
+    resolvedReports: Int,
+    hasReportData: Boolean,
+): Int? = when {
+    !hasReportData -> null
+    totalReports <= 0 -> 0
+    else -> ((resolvedReports.coerceAtLeast(0) * 100f) / totalReports).roundToInt().coerceIn(0, 100)
 }

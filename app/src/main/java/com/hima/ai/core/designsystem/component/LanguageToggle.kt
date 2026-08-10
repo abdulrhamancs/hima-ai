@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -38,11 +39,16 @@ fun LanguageToggle(
 ) {
     val colors = LocalHimaColors.current
     val content = if (onDark) Color.White else colors.ink
-    val container = if (onDark) Color.White.copy(alpha = 0.16f) else colors.bg2
+    val container = if (onDark) Color.White.copy(alpha = 0.16f) else colors.surface
 
     Row(
         modifier = modifier
             .defaultMinSize(minHeight = MinTouchTarget)
+            .shadow(
+                elevation = if (!onDark && !colors.isDark) 4.dp else 0.dp,
+                shape = RoundedCornerShape(50),
+                clip = false,
+            )
             .clip(RoundedCornerShape(50))
             .background(container)
             .clickable { toggleAppLanguage() }

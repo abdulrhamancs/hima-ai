@@ -53,11 +53,11 @@ val Inter = FontFamily(
 object HimaTextStyles {
     val h1 = TextStyle(
         fontFamily = IBMPlexSansArabic, fontWeight = FontWeight.SemiBold,
-        fontSize = 25.sp, lineHeight = 33.sp, letterSpacing = (-0.3).sp,
+        fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = (-0.3).sp,
     )
     val h2 = TextStyle(
         fontFamily = IBMPlexSansArabic, fontWeight = FontWeight.SemiBold,
-        fontSize = 19.sp, lineHeight = 26.sp, letterSpacing = (-0.15).sp,
+        fontSize = 18.sp, lineHeight = 26.sp, letterSpacing = (-0.15).sp,
     )
     val t = TextStyle(
         fontFamily = IBMPlexSansArabic, fontWeight = FontWeight.Medium,
@@ -65,19 +65,19 @@ object HimaTextStyles {
     )
     val b = TextStyle(
         fontFamily = IBMPlexSansArabic, fontWeight = FontWeight.Normal,
-        fontSize = 15.5.sp, lineHeight = 25.sp,
+        fontSize = 14.sp, lineHeight = 22.sp,
     )
     val m = TextStyle(
         fontFamily = IBMPlexSansArabic, fontWeight = FontWeight.Normal,
-        fontSize = 13.sp, lineHeight = 19.sp,
+        fontSize = 12.sp, lineHeight = 18.sp,
     )
     val num = TextStyle(
         fontFamily = Inter, fontWeight = FontWeight.Medium,
-        fontSize = 15.sp, lineHeight = 20.sp,
+        fontSize = 22.sp, lineHeight = 28.sp,
     )
     val button = TextStyle(
         fontFamily = IBMPlexSansArabic, fontWeight = FontWeight.SemiBold,
-        fontSize = 16.5.sp, lineHeight = 22.sp,
+        fontSize = 16.sp, lineHeight = 22.sp,
     )
 }
 
