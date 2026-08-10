@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,12 +76,14 @@ import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
 import com.hima.ai.core.location.awaitCurrentLocation
 import com.hima.ai.core.location.hasLocationPermission
+import com.hima.ai.core.location.reverseGeocodeLocality
 import com.hima.ai.core.map.HimaMapView
 import com.hima.ai.core.map.MapConfig
 import com.hima.ai.core.map.MapLoadState
 import com.hima.ai.core.map.distanceBearing
 import com.hima.ai.core.map.recenterToDefault
 import com.hima.ai.core.map.recenterToLocation
+import com.hima.ai.core.util.currentAppLanguage
 import com.hima.ai.domain.model.FireHotspot
 import com.hima.ai.domain.model.IncidentCategory
 import com.hima.ai.domain.model.MapIncident
@@ -122,6 +125,10 @@ fun MapScreen(
     val fusedLocationClient = remember(context) { LocationServices.getFusedLocationProviderClient(context) }
 
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
+    // Which incidents are grouped into which cluster — stable across a
+    // pan/zoom gesture; only regroupIncidents() below ever changes this. See
+    // MapMarkerGroup for why membership and position are kept separate.
+    var markerGroups by remember { mutableStateOf<List<MapMarkerGroup>>(emptyList()) }
     var markerItems by remember { mutableStateOf<List<MapMarkerItem>>(emptyList()) }
     var fireMarkerItems by remember { mutableStateOf<List<Pair<FireHotspot, Offset>>>(emptyList()) }
     var userLocationScreenPos by remember { mutableStateOf<Offset?>(null) }
@@ -132,17 +139,16 @@ fun MapScreen(
     // which is the retry mechanism for a style that failed to load.
     var retryKey by remember { mutableIntStateOf(0) }
 
+    // Cheap, called on every camera-move tick: re-positions the *existing*
+    // marker groups and the hotspot/user-location layers from the current
+    // projection. Never decides cluster membership — see regroupIncidents.
     fun refreshProjections(currentMap: MapLibreMap) {
         val projection = currentMap.projection
-        val positioned = uiState.visibleIncidents.map { incident ->
-            val point = projection.toScreenLocation(LatLng(incident.latitude, incident.longitude))
-            incident to Offset(point.x, point.y)
-        }
-        // Cluster over every report, then drop the off-screen results: the
-        // counts stay correct for clusters straddling the edge, while the
-        // number of composed markers is bounded by the viewport rather than
-        // by how many reports exist. Same reason the hotspot layer is culled.
-        markerItems = clusterIncidents(positioned).filter { it.screenPosition.isOnScreen(mapSizePx) }
+        // Drop off-screen results: the counts stay correct for clusters
+        // straddling the edge, while the number of composed markers is
+        // bounded by the viewport rather than by how many reports exist.
+        // Same reason the hotspot layer is culled.
+        markerItems = markerGroups.map { it.project(projection) }.filter { it.screenPosition.isOnScreen(mapSizePx) }
         // NASA hotspots are never clustered with reports (and not clustered
         // with each other for this MVP) — a wholly separate visual layer,
         // never sharing an id space with [MapIncident].
@@ -161,13 +167,37 @@ fun MapScreen(
         }
     }
 
+    // Re-decides cluster membership from the current projection, then
+    // re-positions immediately. Call only when the incident set changes or
+    // the camera settles (onCameraIdle) — never on every camera-move tick,
+    // or two nearby markers' pixel distance crossing the cluster threshold
+    // many times a second makes them flicker between single pins and a
+    // merged cluster, and the cluster's centroid position makes that flicker
+    // visible as a marker jumping toward whichever neighbour it just merged
+    // with (most noticeable while zooming, since zoom changes every pair's
+    // pixel distance at once).
+    fun regroupIncidents(currentMap: MapLibreMap) {
+        markerGroups = groupIncidents(uiState.visibleIncidents, currentMap.projection)
+        refreshProjections(currentMap)
+    }
+
     // Camera movement is driven by MapLibre's own listener (registered
     // below), not recomposition — but the filter and the user's location can
     // both change the markers/dot without the camera moving, so they need
     // their own trigger.
     LaunchedEffect(map, uiState.visibleIncidents, uiState.fireHotspots, uiState.showNasaFires, uiState.userLocation) {
-        map?.let(::refreshProjections)
+        map?.let(::regroupIncidents)
     }
+
+    // DisposableEffect(map) below only re-runs when the map instance itself
+    // changes (i.e. once, at onMapReady), so a listener lambda created there
+    // would otherwise close over that single frame's refreshProjections —
+    // and therefore that frame's (often still-empty) uiState — forever.
+    // rememberUpdatedState keeps the listener calling whichever version was
+    // defined by the most recent recomposition, so panning after reports
+    // finish loading doesn't revert markers to a stale/empty snapshot.
+    val latestRefreshProjections = rememberUpdatedState(::refreshProjections)
+    val latestRegroupIncidents = rememberUpdatedState(::regroupIncidents)
 
     LaunchedEffect(map, uiState.focusIncident) {
         val currentMap = map ?: return@LaunchedEffect
@@ -184,9 +214,11 @@ fun MapScreen(
 
     DisposableEffect(map) {
         val currentMap = map ?: return@DisposableEffect onDispose {}
-        val moveListener = MapLibreMap.OnCameraMoveListener { refreshProjections(currentMap) }
+        // Mid-gesture: reposition only, never re-cluster (see regroupIncidents).
+        val moveListener = MapLibreMap.OnCameraMoveListener { latestRefreshProjections.value(currentMap) }
+        // Settled: safe to re-decide cluster membership for the new zoom/position.
         val idleListener = MapLibreMap.OnCameraIdleListener {
-            refreshProjections(currentMap)
+            latestRegroupIncidents.value(currentMap)
             viewModel.onCameraMoved(currentMap.cameraPosition)
         }
         currentMap.addOnCameraMoveListener(moveListener)
@@ -201,6 +233,17 @@ fun MapScreen(
         val location = fusedLocationClient.awaitCurrentLocation() ?: return null
         val latLng = LatLng(location.latitude, location.longitude)
         viewModel.onLocationReceived(latLng)
+        // Resolved once per screen session — re-fetching location (e.g. a
+        // second "My Location" tap) shouldn't re-hit the geocoder if it
+        // already has an answer.
+        if (uiState.locationLabel == null) {
+            val label = context.reverseGeocodeLocality(
+                location.latitude,
+                location.longitude,
+                currentAppLanguage().tag,
+            )
+            viewModel.onLocationLabelResolved(label)
+        }
         return latLng
     }
 
@@ -252,73 +295,86 @@ fun MapScreen(
             // MapLibre's projection always returns LTR screen pixels, so the
             // Compose subtree reading them has to stay LTR too, or markers
             // land offset from where the map actually put them.
+            //
+            // The inner Box below is deliberately created *inside* this
+            // provider, and that placement is the whole point: a Box positions
+            // its children using the layout direction its own LayoutNode was
+            // composed with, not the one its children see. With only the
+            // children inside the provider, the enclosing (ambient, RTL) Box
+            // resolved their default Alignment.TopStart to the top-*right*
+            // corner and absoluteOffset then pushed them a further +x from
+            // there — landing every marker with a positive projected x roughly
+            // a screen-width off the right edge, which is what made markers
+            // vanish, flicker and drift in Arabic while English was fine.
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                if (MapConfig.isConfigured) {
-                    key(retryKey) {
-                        HimaMapView(
-                            modifier = Modifier.fillMaxSize(),
-                            onMapReady = { readyMap ->
-                                readyMap.uiSettings.isRotateGesturesEnabled = false
-                                readyMap.uiSettings.isTiltGesturesEnabled = false
-                                readyMap.uiSettings.isCompassEnabled = false
-                                readyMap.uiSettings.isLogoEnabled = false
-                                readyMap.cameraPosition = uiState.lastCameraPosition ?: MapConfig.saudiArabiaDefaultCamera
-                                map = readyMap
-                            },
-                            onLoadStateChanged = viewModel::onMapLoadStateChanged,
-                        )
-                    }
+                Box(Modifier.fillMaxSize()) {
+                    if (MapConfig.isConfigured) {
+                        key(retryKey) {
+                            HimaMapView(
+                                modifier = Modifier.fillMaxSize(),
+                                onMapReady = { readyMap ->
+                                    readyMap.uiSettings.isRotateGesturesEnabled = false
+                                    readyMap.uiSettings.isTiltGesturesEnabled = false
+                                    readyMap.uiSettings.isCompassEnabled = false
+                                    readyMap.uiSettings.isLogoEnabled = false
+                                    readyMap.cameraPosition = uiState.lastCameraPosition ?: MapConfig.saudiArabiaDefaultCamera
+                                    map = readyMap
+                                },
+                                onLoadStateChanged = viewModel::onMapLoadStateChanged,
+                            )
+                        }
 
-                    if (uiState.mapLoadState == MapLoadState.Ready) {
-                        // MapTiler's outdoor style is intentionally shared by both themes.
-                        // A translucent Hima surface makes it comfortable in dark mode
-                        // without changing providers, API configuration, or map behavior.
-                        if (colors.isDark) {
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(colors.bg.copy(alpha = 0.38f)),
-                            )
-                        }
-                        userLocationScreenPos?.let { position ->
-                            val x = with(density) { position.x.toDp() } - 20.dp
-                            val y = with(density) { position.y.toDp() } - 20.dp
-                            CurrentLocationMarker(modifier = Modifier.absoluteOffset(x = x, y = y))
-                        }
-                        // Drawn before the report pins below so a report
-                        // sitting on top of a hotspot still wins the tap.
-                        fireMarkerItems.forEach { (hotspot, screenPosition) ->
-                            val x = with(density) { screenPosition.x.toDp() } - 14.dp
-                            val y = with(density) { screenPosition.y.toDp() } - 14.dp
-                            FireHotspotMarker(
-                                onClick = { viewModel.onFireHotspotClick(hotspot) },
-                                modifier = Modifier.absoluteOffset(x = x, y = y),
-                            )
-                        }
-                        markerItems.forEach { item ->
-                            when (item) {
-                                is MapMarkerItem.Single -> {
-                                    val incident = item.incident
-                                    val x = with(density) { item.screenPosition.x.toDp() } - 24.dp
-                                    val y = with(density) { item.screenPosition.y.toDp() } - 24.dp
-                                    MapMarkerPin(
-                                        category = incident.category,
-                                        severity = incident.report.severity,
-                                        selected = uiState.selectedIncident?.report?.id == incident.report.id,
-                                        onClick = { viewModel.onMarkerClick(incident) },
-                                        modifier = Modifier.absoluteOffset(x = x, y = y),
-                                    )
-                                }
-                                is MapMarkerItem.Cluster -> {
-                                    val topSeverity = item.incidents.maxBy { it.report.severity.ordinal }.report.severity
-                                    val x = with(density) { item.screenPosition.x.toDp() } - 22.dp
-                                    val y = with(density) { item.screenPosition.y.toDp() } - 22.dp
-                                    MapClusterMarker(
-                                        count = item.incidents.size,
-                                        severity = topSeverity,
-                                        onClick = { map?.let { zoomToCluster(it, item.incidents) } },
-                                        modifier = Modifier.absoluteOffset(x = x, y = y),
-                                    )
+                        if (uiState.mapLoadState == MapLoadState.Ready) {
+                            // MapTiler's outdoor style is intentionally shared by both themes.
+                            // A translucent Hima surface makes it comfortable in dark mode
+                            // without changing providers, API configuration, or map behavior.
+                            if (colors.isDark) {
+                                Box(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(colors.bg.copy(alpha = 0.38f)),
+                                )
+                            }
+                            userLocationScreenPos?.let { position ->
+                                val x = with(density) { position.x.toDp() } - 20.dp
+                                val y = with(density) { position.y.toDp() } - 20.dp
+                                CurrentLocationMarker(modifier = Modifier.absoluteOffset(x = x, y = y))
+                            }
+                            // Drawn before the report pins below so a report
+                            // sitting on top of a hotspot still wins the tap.
+                            fireMarkerItems.forEach { (hotspot, screenPosition) ->
+                                val x = with(density) { screenPosition.x.toDp() } - 14.dp
+                                val y = with(density) { screenPosition.y.toDp() } - 14.dp
+                                FireHotspotMarker(
+                                    onClick = { viewModel.onFireHotspotClick(hotspot) },
+                                    modifier = Modifier.absoluteOffset(x = x, y = y),
+                                )
+                            }
+                            markerItems.forEach { item ->
+                                when (item) {
+                                    is MapMarkerItem.Single -> {
+                                        val incident = item.incident
+                                        val x = with(density) { item.screenPosition.x.toDp() } - 24.dp
+                                        val y = with(density) { item.screenPosition.y.toDp() } - 24.dp
+                                        MapMarkerPin(
+                                            category = incident.category,
+                                            severity = incident.report.severity,
+                                            selected = uiState.selectedIncident?.report?.id == incident.report.id,
+                                            onClick = { viewModel.onMarkerClick(incident) },
+                                            modifier = Modifier.absoluteOffset(x = x, y = y),
+                                        )
+                                    }
+                                    is MapMarkerItem.Cluster -> {
+                                        val topSeverity = item.incidents.maxBy { it.report.severity.ordinal }.report.severity
+                                        val x = with(density) { item.screenPosition.x.toDp() } - 22.dp
+                                        val y = with(density) { item.screenPosition.y.toDp() } - 22.dp
+                                        MapClusterMarker(
+                                            count = item.incidents.size,
+                                            severity = topSeverity,
+                                            onClick = { map?.let { zoomToCluster(it, item.incidents) } },
+                                            modifier = Modifier.absoluteOffset(x = x, y = y),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -369,6 +425,7 @@ fun MapScreen(
 
             MapOverlayControls(
                 filter = uiState.filter,
+                locationLabel = uiState.locationLabel,
                 onFilterSelected = viewModel::onFilterSelected,
                 onMyLocationClick = ::onMyLocationClick,
                 // Only worth nagging about when there's nothing already on
@@ -470,6 +527,7 @@ private fun zoomToCluster(map: MapLibreMap, incidents: List<MapIncident>) {
 @Composable
 private fun MapOverlayControls(
     filter: MapFilter,
+    locationLabel: String?,
     onFilterSelected: (Int) -> Unit,
     onMyLocationClick: () -> Unit,
     showFireErrorNotice: Boolean,
@@ -498,7 +556,7 @@ private fun MapOverlayControls(
                     modifier = Modifier.size(15.dp),
                 )
                 Text(
-                    text = stringResource(R.string.map_reserve_label),
+                    text = locationLabel ?: stringResource(R.string.map_location_fallback),
                     style = HimaTextStyles.m.copy(fontSize = 12.5.sp, fontWeight = FontWeight.Medium),
                     color = colors.ink,
                 )

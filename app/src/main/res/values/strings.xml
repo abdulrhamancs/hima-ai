@@ -14,14 +14,14 @@
     <string name="cd_language">تغيير اللغة</string>
 
     <!-- Splash -->
-    <string name="splash_tagline">منصة ذكية لحماية المحميات الطبيعية ودعم اتخاذ القرار البيئي</string>
+    <string name="splash_tagline">منصة ذكية لحماية البيئة الطبيعية ودعم اتخاذ القرار البيئي</string>
     <string name="splash_cta">ابدأ الآن</string>
     <string name="splash_feature1_title">رصد ذكي</string>
     <string name="splash_feature1_desc">تقنيات AI لرصد التهديدات البيئية</string>
     <string name="splash_feature2_title">حماية مستدامة</string>
     <string name="splash_feature2_desc">دعم القرارات لحماية الموارد الطبيعية</string>
     <string name="splash_feature3_title">تحليل متقدم</string>
-    <string name="splash_feature3_desc">تحليلات ذكية لبيانات المحميات</string>
+    <string name="splash_feature3_desc">تحليلات ذكية لبيانات البيئة</string>
 
     <!-- Login -->
     <string name="login_title">تسجيل الدخول</string>
@@ -47,14 +47,14 @@
     <!-- Home -->
     <string name="home_greeting">مرحباً أحمد</string>
     <string name="home_greeting_sub">معاً نحمي طبيعتنا</string>
-    <string name="home_reserve_status">حالة المحمية</string>
-    <string name="home_reserve_status_value">جيدة</string>
-    <string name="home_reserve_status_note">لا توجد تنبيهات حرجة حالياً</string>
-    <string name="home_reserve_status_attention">تحتاج متابعة</string>
-    <string name="home_reserve_status_critical_note">البلاغات الحرجة التي تحتاج إلى متابعة: %1$d</string>
-    <string name="home_reserve_status_unknown">—</string>
-    <string name="home_reserve_status_loading">جاري تحديث حالة المحمية</string>
-    <string name="home_monitoring_scope">نطاق المحمية</string>
+    <string name="home_environmental_status">حالة البيئة</string>
+    <string name="home_environmental_status_value">جيدة</string>
+    <string name="home_environmental_status_note">لا توجد تنبيهات حرجة حالياً</string>
+    <string name="home_environmental_status_attention">تحتاج متابعة</string>
+    <string name="home_environmental_status_critical_note">البلاغات الحرجة التي تحتاج إلى متابعة: %1$d</string>
+    <string name="home_environmental_status_unknown">—</string>
+    <string name="home_environmental_status_loading">جاري تحديث حالة البيئة</string>
+    <string name="home_monitoring_scope">النطاق البيئي</string>
     <string name="home_resolved_percentage">%1$d%%</string>
     <string name="home_resolved_percentage_label">نسبة البلاغات المعالجة</string>
     <string name="home_stat_total">إجمالي البلاغات</string>
@@ -259,7 +259,7 @@
     <string name="cd_my_location">موقعي</string>
 
     <!-- Map -->
-    <string name="map_reserve_label">محمية الملك سلمان</string>
+    <string name="map_location_fallback">الموقع الحالي</string>
     <string name="map_filter_all">الكل</string>
     <string name="map_filter_waste">نفايات</string>
     <string name="map_filter_fire">حرائق</string>
@@ -283,7 +283,7 @@
     <!-- NASA FIRMS — satellite fire detections, always distinct from user reports -->
     <string name="map_filter_nasa_fires">حرائق الأقمار الصناعية</string>
     <string name="map_empty_nasa_fires">لا يوجد رصد حرائق في السعودية خلال آخر ٢٤ ساعة</string>
-    <string name="map_fires_error">تعذّر تحميل رصد الحرائق من الأقمار الصناعية</string>
+    <string name="map_fires_error">رصد الحرائق بالأقمار الصناعية غير متاح حالياً</string>
     <string name="map_fire_alert_title">رصد حريق محتمل</string>
     <string name="map_fire_alert_disclaimer">بيانات رصد بالأقمار الصناعية — ليست بلاغًا من مستخدم</string>
     <string name="map_fire_source_label">المصدر</string>
@@ -314,7 +314,7 @@
     <string name="more_section_about">حول التطبيق</string>
     <string name="more_version">الإصدار</string>
     <string name="more_share_app">مشاركة التطبيق</string>
-    <string name="more_share_text">Hima AI — منصة ذكية لحماية المحميات الطبيعية ودعم القرار البيئي.</string>
+    <string name="more_share_text">Hima AI — منصة ذكية لحماية البيئة الطبيعية ودعم القرار البيئي.</string>
     <string name="more_share_chooser">مشاركة Hima AI</string>
     <string name="more_rate_app">تقييم التطبيق</string>
     <string name="more_sign_out">تسجيل الخروج</string>

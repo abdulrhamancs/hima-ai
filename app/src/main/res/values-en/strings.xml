@@ -14,14 +14,14 @@
     <string name="cd_language">Change language</string>
 
     <!-- Splash -->
-    <string name="splash_tagline">An intelligent platform to protect natural reserves and support environmental decision-making</string>
+    <string name="splash_tagline">An intelligent platform to protect the natural environment and support environmental decision-making</string>
     <string name="splash_cta">Get started</string>
     <string name="splash_feature1_title">Smart monitoring</string>
     <string name="splash_feature1_desc">AI that detects environmental threats</string>
     <string name="splash_feature2_title">Sustainable protection</string>
     <string name="splash_feature2_desc">Decision support for natural resources</string>
     <string name="splash_feature3_title">Advanced analysis</string>
-    <string name="splash_feature3_desc">Smart analytics for reserve data</string>
+    <string name="splash_feature3_desc">Smart analytics for environmental data</string>
 
     <!-- Login -->
     <string name="login_title">Sign in</string>
@@ -47,14 +47,14 @@
     <!-- Home -->
     <string name="home_greeting">Welcome, Ahmad</string>
     <string name="home_greeting_sub">Together we protect our nature</string>
-    <string name="home_reserve_status">Reserve status</string>
-    <string name="home_reserve_status_value">Good</string>
-    <string name="home_reserve_status_note">No critical alerts right now</string>
-    <string name="home_reserve_status_attention">Needs attention</string>
-    <string name="home_reserve_status_critical_note">Critical reports needing attention: %1$d</string>
-    <string name="home_reserve_status_unknown">—</string>
-    <string name="home_reserve_status_loading">Updating reserve status</string>
-    <string name="home_monitoring_scope">Reserve area</string>
+    <string name="home_environmental_status">Environmental status</string>
+    <string name="home_environmental_status_value">Good</string>
+    <string name="home_environmental_status_note">No critical alerts right now</string>
+    <string name="home_environmental_status_attention">Needs attention</string>
+    <string name="home_environmental_status_critical_note">Critical reports needing attention: %1$d</string>
+    <string name="home_environmental_status_unknown">—</string>
+    <string name="home_environmental_status_loading">Updating environmental status</string>
+    <string name="home_monitoring_scope">Environmental area</string>
     <string name="home_resolved_percentage">%1$d%%</string>
     <string name="home_resolved_percentage_label">Reports resolved</string>
     <string name="home_stat_total">Total reports</string>
@@ -259,7 +259,7 @@
     <string name="cd_my_location">My location</string>
 
     <!-- Map -->
-    <string name="map_reserve_label">King Salman Reserve</string>
+    <string name="map_location_fallback">Current Location</string>
     <string name="map_filter_all">All</string>
     <string name="map_filter_waste">Waste</string>
     <string name="map_filter_fire">Fires</string>
@@ -283,7 +283,7 @@
     <!-- NASA FIRMS — satellite fire detections, always distinct from user reports -->
     <string name="map_filter_nasa_fires">Satellite fires</string>
     <string name="map_empty_nasa_fires">No fire detections in Saudi Arabia in the last 24 hours</string>
-    <string name="map_fires_error">Couldn\'t load satellite fire detections</string>
+    <string name="map_fires_error">Satellite fire monitoring is unavailable right now</string>
     <string name="map_fire_alert_title">Possible fire detected</string>
     <string name="map_fire_alert_disclaimer">Satellite detection data — not a user report</string>
     <string name="map_fire_source_label">Source</string>
@@ -314,7 +314,7 @@
     <string name="more_section_about">About</string>
     <string name="more_version">Version</string>
     <string name="more_share_app">Share the app</string>
-    <string name="more_share_text">Hima AI — intelligent environmental monitoring for natural reserves.</string>
+    <string name="more_share_text">Hima AI — intelligent environmental monitoring for the natural environment.</string>
     <string name="more_share_chooser">Share Hima AI</string>
     <string name="more_rate_app">Rate the app</string>
     <string name="more_sign_out">Sign out</string>

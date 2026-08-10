@@ -107,34 +107,34 @@ fun HomeScreen(
 
             item {
                 StatusIndicator(
-                    label = stringResource(R.string.home_reserve_status),
+                    label = stringResource(R.string.home_environmental_status),
                     value = stringResource(
                         when {
-                            !hasReportData -> R.string.home_reserve_status_unknown
-                            uiState.criticalAlerts > 0 -> R.string.home_reserve_status_attention
-                            else -> R.string.home_reserve_status_value
+                            !hasReportData -> R.string.home_environmental_status_unknown
+                            uiState.criticalAlerts > 0 -> R.string.home_environmental_status_attention
+                            else -> R.string.home_environmental_status_value
                         },
                     ),
                     note = when {
-                        !hasReportData -> stringResource(R.string.home_reserve_status_loading)
+                        !hasReportData -> stringResource(R.string.home_environmental_status_loading)
                         uiState.criticalAlerts > 0 -> stringResource(
-                            R.string.home_reserve_status_critical_note,
+                            R.string.home_environmental_status_critical_note,
                             uiState.criticalAlerts,
                         )
-                        else -> stringResource(R.string.home_reserve_status_note)
+                        else -> stringResource(R.string.home_environmental_status_note)
                     },
                     location = monitoredLocation,
                     resolvedPercentage = resolvedPercentage,
                     resolvedPercentageLabel = resolvedPercentage?.let {
                         stringResource(R.string.home_resolved_percentage, it)
-                    } ?: stringResource(R.string.home_reserve_status_unknown),
+                    } ?: stringResource(R.string.home_environmental_status_unknown),
                     resolvedLabel = stringResource(R.string.home_resolved_percentage_label),
                     modifier = Modifier.padding(top = 18.dp),
                 )
             }
 
             item {
-                val unavailable = stringResource(R.string.home_reserve_status_unknown)
+                val unavailable = stringResource(R.string.home_environmental_status_unknown)
                 StatsRow(
                     items = listOf(
                         (if (hasReportData) uiState.totalReports.toString() else unavailable) to stringResource(R.string.home_stat_total),

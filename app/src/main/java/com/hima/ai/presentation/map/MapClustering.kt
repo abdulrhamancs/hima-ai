@@ -3,6 +3,8 @@ package com.hima.ai.presentation.map
 import androidx.compose.ui.geometry.Offset
 import com.hima.ai.domain.model.MapIncident
 import kotlin.math.sqrt
+import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.maps.Projection
 
 /** Markers whose projected screen positions land within this many pixels of
  *  each other merge into a cluster — roughly a marker's own footprint, so
@@ -11,8 +13,7 @@ private const val CLUSTER_PIXEL_THRESHOLD = 70f
 
 /** One thing to render on the map: either a lone incident or a merged group.
  *  [screenPosition] is this frame's projected on-screen offset (px), from
- *  the live MapLibre camera — real geography drives clustering now, not a
- *  fraction of a fake canvas. */
+ *  the live MapLibre camera. */
 sealed interface MapMarkerItem {
     val screenPosition: Offset
 
@@ -21,11 +22,12 @@ sealed interface MapMarkerItem {
 }
 
 /**
- * Greedily groups incidents whose current on-screen projection lands within
- * [CLUSTER_PIXEL_THRESHOLD] of each other. Because the input is already in
- * real screen pixels (from [org.maplibre.android.maps.Projection]), clusters
- * pop apart naturally as the ranger zooms in — the map's own projection does
- * the zoom-scaling that used to be a manual factor in fraction-space.
+ * Greedily groups incidents whose given on-screen positions land within
+ * [CLUSTER_PIXEL_THRESHOLD] of each other. Pure and Projection-free by
+ * design (see [MapClusteringTest][com.hima.ai.presentation.map.MapClusteringTest]) —
+ * callers that need to go from real incidents to screen positions should use
+ * [groupIncidents]/[MapMarkerGroup.project] instead of calling this directly
+ * on every camera tick; see [MapMarkerGroup] for why.
  */
 fun clusterIncidents(positions: List<Pair<MapIncident, Offset>>): List<MapMarkerItem> {
     val used = BooleanArray(positions.size)
@@ -53,4 +55,54 @@ fun clusterIncidents(positions: List<Pair<MapIncident, Offset>>): List<MapMarker
         }
     }
     return result
+}
+
+/**
+ * Which incidents are grouped together — membership only, no screen
+ * position. Deciding membership is kept separate from projecting a
+ * position on purpose: recomputing [clusterIncidents] on every single
+ * camera-move tick (mid-pan or mid-zoom) meant two nearby markers' pixel
+ * distance crossed [CLUSTER_PIXEL_THRESHOLD] back and forth many times a
+ * second, so they visibly flickered between single pins and a merged
+ * cluster — and because a cluster renders at its members' centroid rather
+ * than any one incident's real spot, that same flicker also read as a
+ * marker "jumping" toward whichever neighbour it had just merged with.
+ * [groupIncidents] should only run on an idle camera or when the incident
+ * set itself changes; [project] re-positions the (stable) result on every
+ * other tick without touching membership.
+ */
+sealed interface MapMarkerGroup {
+    data class Single(val incident: MapIncident) : MapMarkerGroup
+    data class Cluster(val incidents: List<MapIncident>) : MapMarkerGroup
+}
+
+/** Projects [incidents] through the current camera and clusters them — call
+ *  only on an idle camera or an incident-data change, never on every
+ *  camera-move tick (see [MapMarkerGroup]). */
+fun groupIncidents(incidents: List<MapIncident>, projection: Projection): List<MapMarkerGroup> {
+    val positions = incidents.map { incident ->
+        val point = projection.toScreenLocation(LatLng(incident.latitude, incident.longitude))
+        incident to Offset(point.x, point.y)
+    }
+    return clusterIncidents(positions).map { item ->
+        when (item) {
+            is MapMarkerItem.Single -> MapMarkerGroup.Single(item.incident)
+            is MapMarkerItem.Cluster -> MapMarkerGroup.Cluster(item.incidents)
+        }
+    }
+}
+
+/** Re-projects a group's existing members to this frame's screen position.
+ *  Never changes membership — only [groupIncidents] does that. */
+fun MapMarkerGroup.project(projection: Projection): MapMarkerItem = when (this) {
+    is MapMarkerGroup.Single -> {
+        val point = projection.toScreenLocation(LatLng(incident.latitude, incident.longitude))
+        MapMarkerItem.Single(incident, Offset(point.x, point.y))
+    }
+    is MapMarkerGroup.Cluster -> {
+        val points = incidents.map { projection.toScreenLocation(LatLng(it.latitude, it.longitude)) }
+        val avgX = points.map { it.x }.average().toFloat()
+        val avgY = points.map { it.y }.average().toFloat()
+        MapMarkerItem.Cluster(incidents, Offset(avgX, avgY))
+    }
 }
