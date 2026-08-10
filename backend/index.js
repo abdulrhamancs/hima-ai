@@ -2,7 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { chatModel, visionModel } = require("./config/gemini");
+const { chatModel, analyzeImage, mapIssueTypeToEnum, mapSeverity } = require("./config/gemini");
 const upload = require("./config/multer");
 const supabase = require("./config/supabase");
 const authRoutes = require("./routes/auth");
@@ -55,21 +55,11 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
     const { latitude, longitude, description: userDescription } = req.body;
     const userId = req.user.id;
 
-    const imagePart = {
-      inlineData: {
-        data: req.file.buffer.toString("base64"),
-        mimeType: req.file.mimetype,
-      },
-    };
-
-    let prompt = "Analyze this image for Hima AI, used both for nature-reserve environmental incident reporting and everyday circular-economy waste identification in Saudi Arabia. ";
-    if (userDescription) prompt += `User description: "${userDescription}". `;
-    if (latitude && longitude) prompt += `Location coordinates: ${latitude}, ${longitude}. `;
-    prompt += "First decide whether this is an environmental incident (fire, illegal hunting, illegal logging, pollution, habitat damage) or a recyclable/reusable waste item (plastic, glass, metal, paper, e-waste), and set result_category accordingly. For an incident, fill issue_type, risk_score, risk_level, and recommendation. For recyclable waste, fill material_category, disposal_classification, an optional reuse_suggestion, and recommendation with correct disposal guidance.";
-
-    const result = await visionModel.generateContent([prompt, imagePart]);
-    const responseText = result.response.text();
-    const analysis = JSON.parse(responseText);
+    const analysis = await analyzeImage(req.file.buffer, req.file.mimetype, {
+      description: userDescription,
+      latitude,
+      longitude,
+    });
 
     if (!analysis.is_recognizable || !analysis.is_environmental) {
       return res.status(422).json({
@@ -97,20 +87,17 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
     const fileName = `reports/${Date.now()}_${req.file.originalname}`;
     const { error: storageError } = await userSupabase
       .storage
-      .from("incident-images")
+      .from("report-images")
       .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
 
     if (storageError) {
       console.error("Storage Error:", storageError);
+      return res.status(500).json({ error: "Something went wrong while uploading the image. Please try again." });
     }
 
-    const { data: publicUrlData } = userSupabase.storage.from("incident-images").getPublicUrl(fileName);
+    const { data: publicUrlData } = userSupabase.storage.from("report-images").getPublicUrl(fileName);
     const imageUrl = publicUrlData ? publicUrlData.publicUrl : "";
 
-    // Column names match the live `reports` table (type/severity/recommended_action/
-    // ai_analysis) — the previous version of this insert (issue_type/ai_description/
-    // risk_level/investigation_question/status:"pending_question") named columns
-    // that don't exist on that table, so every /analyze call failed at this step.
     const { data: dbData, error: dbError } = await userSupabase
       .from("reports")
       .insert({
@@ -119,10 +106,11 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
         description: analysis.description,
-        type: analysis.issue_type,
-        severity: (analysis.risk_level || "LOW").toUpperCase(),
+        type: mapIssueTypeToEnum(analysis.issue_type),
+        severity: mapSeverity(analysis.risk_level),
         recommended_action: analysis.recommendation,
         confidence: analysis.confidence,
+        environmental_impact: analysis.environmental_impact ?? null,
         ai_analysis: analysis,
         status: "OPEN"
       })

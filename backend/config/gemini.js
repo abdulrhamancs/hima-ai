@@ -88,7 +88,9 @@ const ANALYZE_IMAGE_PROMPT =
   "حلل هذه الصورة لتطبيق حِمى (Hima AI)، المستخدم لرصد الحالات البيئية بالمحميات الطبيعية ولتحديد العناصر القابلة لإعادة التدوير أو إعادة الاستخدام. أولاً حدد هل محتواها واضح بدرجة كافية (is_recognizable)، وهل هي مرتبطة بالمجال البيئي أو تُظهر عنصرًا قابلًا لإعادة التدوير/الاستخدام (is_environmental). إذا لم تكن كذلك، لا تكتب وصفًا أو تحليلاً تفصيليًا. فقط في حال كانت الصورة واضحة ومرتبطة بذلك، حدد result_category: (أ) environmental_incident لحادثة بيئية تحتاج بلاغًا — صنّف issue_type إلى واحدة من: حريق، احتطاب غير نظامي، مخلفات (نفايات صلبة أو بلاستيكية)، تلوث مياه، آفة نباتية، أو حالة بيئية أخرى؛ واملأ risk_score وrisk_level؛ أو (ب) recyclable_waste لعنصر يومي قابل لإعادة التدوير أو إعادة الاستخدام (بلاستيك، زجاج، معدن، ورق) — املأ material_category وdisposal_classification وreuse_suggestion الاختياري. بكلتا الحالتين، اذكر الأثر البيئي (environmental_impact) واقترح إجراءً مستدامًا (recommendation) — يفضَّل حلول الاقتصاد الدائري (فرز، تدوير، إعادة استخدام) لحالات المخلفات والعناصر القابلة لإعادة التدوير، ومعالجة المصدر واحتواء التسرب لحالات تلوث المياه، والإجراء البيئي المناسب لحالات الطوارئ الأخرى.";
 
 // Shared by /analyze and POST /reports so both call Gemini identically.
-async function analyzeImage(buffer, mimeType) {
+// `context` (optional) folds the caller's own description/location into the
+// prompt as extra hints — it never changes which fields come back.
+async function analyzeImage(buffer, mimeType, context = {}) {
   const imagePart = {
     inlineData: {
       data: buffer.toString("base64"),
@@ -96,8 +98,39 @@ async function analyzeImage(buffer, mimeType) {
     },
   };
 
-  const result = await visionModel.generateContent([ANALYZE_IMAGE_PROMPT, imagePart]);
+  let prompt = ANALYZE_IMAGE_PROMPT;
+  if (context.description) prompt += ` ملاحظة المستخدم: "${context.description}".`;
+  if (context.latitude && context.longitude) prompt += ` إحداثيات الموقع: ${context.latitude}, ${context.longitude}.`;
+
+  const result = await visionModel.generateContent([prompt, imagePart]);
   return JSON.parse(result.response.text());
 }
 
-module.exports = { chatModel, visionModel, analyzeImage };
+// Gemini's issue_type is free text ("حريق"), not the enum the reports table's
+// type column requires ("FIRE") — this maps between them. Shared by /analyze
+// and POST /reports so both classify identically.
+const TYPE_KEYWORDS = [
+  { type: "FIRE", keywords: ["حريق", "دخان", "fire", "smoke"] },
+  { type: "ILLEGAL_LOGGING", keywords: ["احتطاب", "قطع أشجار", "قطع الأشجار", "logging", "deforestation"] },
+  { type: "WATER_POLLUTION", keywords: ["تلوث مياه", "تلوث", "تسرب", "pollution", "spill", "contamination"] },
+  { type: "WASTE", keywords: ["مخلفات بلاستيكية", "مخلفات", "نفايات", "قمامة", "waste", "garbage", "plastic"] },
+  { type: "PLANT_DISEASE", keywords: ["آفة نباتية", "آفة", "مرض نباتي", "plant disease", "pest"] },
+];
+
+function mapIssueTypeToEnum(text) {
+  if (!text) return "OTHER";
+  const normalized = text.toLowerCase();
+  for (const { type, keywords } of TYPE_KEYWORDS) {
+    if (keywords.some((k) => normalized.includes(k.toLowerCase()))) {
+      return type;
+    }
+  }
+  return "OTHER";
+}
+
+function mapSeverity(riskLevel) {
+  const upper = String(riskLevel || "").toUpperCase();
+  return ["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(upper) ? upper : "LOW";
+}
+
+module.exports = { chatModel, visionModel, analyzeImage, mapIssueTypeToEnum, mapSeverity };

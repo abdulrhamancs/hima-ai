@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const { randomUUID } = require("crypto");
 const { createUserClient } = require("../config/supabase");
-const { analyzeImage } = require("../config/gemini");
+const { analyzeImage, mapIssueTypeToEnum, mapSeverity } = require("../config/gemini");
 const upload = require("../config/multer");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -13,30 +13,6 @@ const EXT_BY_MIME = {
   "image/webp": "webp",
   "image/gif": "gif",
 };
-
-const TYPE_KEYWORDS = [
-  { type: "FIRE", keywords: ["حريق", "دخان", "fire", "smoke"] },
-  { type: "ILLEGAL_LOGGING", keywords: ["احتطاب", "قطع أشجار", "قطع الأشجار", "logging", "deforestation"] },
-  { type: "WATER_POLLUTION", keywords: ["تلوث مياه", "تلوث", "تسرب", "pollution", "spill", "contamination"] },
-  { type: "WASTE", keywords: ["مخلفات بلاستيكية", "مخلفات", "نفايات", "قمامة", "waste", "garbage", "plastic"] },
-  { type: "PLANT_DISEASE", keywords: ["آفة نباتية", "آفة", "مرض نباتي", "plant disease", "pest"] },
-];
-
-function mapIssueTypeToEnum(text) {
-  if (!text) return "OTHER";
-  const normalized = text.toLowerCase();
-  for (const { type, keywords } of TYPE_KEYWORDS) {
-    if (keywords.some((k) => normalized.includes(k.toLowerCase()))) {
-      return type;
-    }
-  }
-  return "OTHER";
-}
-
-function mapSeverity(riskLevel) {
-  const upper = String(riskLevel || "").toUpperCase();
-  return ["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(upper) ? upper : "LOW";
-}
 
 // POST /reports — image + description + location -> Gemini -> structured result -> saved report
 router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
@@ -66,6 +42,17 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
       return res.status(422).json({
         status: "error",
         error: "الصورة غير مرتبطة بالمجال البيئي. يرجى رفع صورة مرتبطة بالبيئة أو الحياة البرية.",
+      });
+    }
+
+    // A recyclable/reusable item is a circular-economy result, not a field
+    // incident — it doesn't belong in the reports table (which drives the
+    // map and History), so there's nothing to upload or persist here.
+    if (analysis.result_category === "recyclable_waste") {
+      return res.json({
+        status: "success",
+        result_category: "recyclable_waste",
+        ai_result: analysis,
       });
     }
 
