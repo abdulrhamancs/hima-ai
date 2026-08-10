@@ -27,6 +27,7 @@ import com.hima.ai.domain.model.Severity
 data class SeverityColors(val background: Color, val foreground: Color)
 
 fun severityColors(severity: Severity): SeverityColors = when (severity) {
+    Severity.UNKNOWN -> SeverityColors(SeverityLowBg, SeverityLowFg)
     Severity.LOW -> SeverityColors(SeverityLowBg, SeverityLowFg)
     Severity.MEDIUM -> SeverityColors(SeverityMidBg, SeverityMidFg)
     Severity.HIGH -> SeverityColors(SeverityHighBg, SeverityHighFg)

@@ -45,14 +45,12 @@ interface SupabaseRestApi {
     suspend fun getReports(
         @Header("Authorization") bearerToken: String,
         @Query("select") select: String = REPORT_SELECT,
-        @Query("latitude") latitudeNotNull: String = "not.is.null",
-        @Query("longitude") longitudeNotNull: String = "not.is.null",
         @Query("order") order: String = "created_at.desc",
     ): Response<List<ReportDto>>
 }
 
 private const val REPORT_SELECT =
-    "id,type,severity,status,latitude,longitude,description,recommended_action,ai_analysis,confidence,created_at"
+    "id,type,severity,status,latitude,longitude,description,image_url,recommended_action,environmental_impact,ai_analysis,confidence,created_at"
 
 @JsonClass(generateAdapter = true)
 data class ProfileInsertRequest(
@@ -81,18 +79,39 @@ data class PostgrestErrorResponse(
 data class ReportDto(
     val id: String,
     val type: String?,
-    val severity: String,
-    val status: String,
-    val latitude: Double,
-    val longitude: Double,
+    val severity: String?,
+    val status: String?,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val description: String? = null,
+    @Json(name = "image_url") val imageUrl: String? = null,
     @Json(name = "recommended_action") val recommendedAction: String? = null,
+    @Json(name = "environmental_impact") val environmentalImpact: String? = null,
     @Json(name = "ai_analysis") val aiAnalysis: AiAnalysisDto? = null,
-    val confidence: Int? = null,
+    val confidence: Double? = null,
     @Json(name = "created_at") val createdAt: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
 data class AiAnalysisDto(
-    @Json(name = "risk_score") val riskScore: Int? = null,
+    @Json(name = "result_category") val resultCategory: String? = null,
+    val description: String? = null,
+    val confidence: Double? = null,
+    val recommendation: String? = null,
+    @Json(name = "environmental_impact") val environmentalImpact: String? = null,
+    @Json(name = "ai_explanation") val aiExplanation: String? = null,
+    @Json(name = "issue_type") val issueType: String? = null,
+    @Json(name = "risk_score") val riskScore: Double? = null,
+    @Json(name = "risk_level") val riskLevel: String? = null,
+    @Json(name = "material_category") val materialCategory: String? = null,
+    @Json(name = "waste_type") val wasteType: String? = null,
+    @Json(name = "disposal_classification") val disposalClassification: String? = null,
+    val recyclable: Boolean? = null,
+    val reusable: Boolean? = null,
+    val repairable: Boolean? = null,
+    @Json(name = "preferred_action") val preferredAction: String? = null,
+    @Json(name = "reuse_suggestion") val reuseSuggestion: String? = null,
+    @Json(name = "repair_guidance") val repairGuidance: String? = null,
+    @Json(name = "recycling_guidance") val recyclingGuidance: String? = null,
+    @Json(name = "disposal_guidance") val disposalGuidance: String? = null,
 )

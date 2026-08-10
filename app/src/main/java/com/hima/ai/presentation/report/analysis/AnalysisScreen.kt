@@ -44,6 +44,7 @@ import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.Inter
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
 import com.hima.ai.domain.model.AnalysisResultCategory
+import com.hima.ai.domain.model.AiAnalysis
 import com.hima.ai.domain.model.SceneKind
 import com.hima.ai.domain.model.Severity
 
@@ -55,7 +56,7 @@ import com.hima.ai.domain.model.Severity
 @Composable
 fun AnalysisScreen(
     onBackClick: () -> Unit,
-    onAnalysisComplete: (AnalysisResultCategory) -> Unit,
+    onAnalysisComplete: (AiAnalysis) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AnalysisViewModel = hiltViewModel(),
 ) {
@@ -63,8 +64,8 @@ fun AnalysisScreen(
     val colors = LocalHimaColors.current
 
     LaunchedEffect(uiState.isComplete) {
-        val category = uiState.result?.category
-        if (uiState.isComplete && category != null) onAnalysisComplete(category)
+        val result = uiState.result
+        if (uiState.isComplete && result != null) onAnalysisComplete(result)
     }
 
     Column(

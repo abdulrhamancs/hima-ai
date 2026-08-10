@@ -1,7 +1,9 @@
 package com.hima.ai.presentation.map
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.hima.ai.core.navigation.HimaDestinations
 import com.hima.ai.core.map.MapConfig
 import com.hima.ai.core.map.MapLoadState
 import com.hima.ai.domain.model.IncidentCategory
@@ -23,6 +25,8 @@ data class MapUiState(
     val reportsLoadState: ReportsLoadState = ReportsLoadState.Idle,
     val filter: IncidentCategory? = null,
     val selectedIncident: MapIncident? = null,
+    /** One-shot request from Report Detail to center/select this exact marker. */
+    val focusIncident: MapIncident? = null,
     /** Map *rendering* state (style/tiles) — separate from [reportsLoadState],
      *  which is about the report *data*; the base map and the markers on it
      *  load independently. */
@@ -45,17 +49,39 @@ data class MapUiState(
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val reportsRepository: ReportsRepository,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MapUiState())
     val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
 
     private var locationDenials = 0
+    private var focusHandled = false
+    private val focusReportId = savedStateHandle.get<String>(HimaDestinations.MAP_ARG_REPORT_ID)
+        ?.takeIf { it.isNotBlank() }
+
+    /** True only when Detail intentionally opened this map for one report. */
+    val openedForFocusedReport: Boolean = focusReportId != null
 
     init {
         // Report data and map tiles load independently and in parallel —
         // neither needs to wait on the other.
-        viewModelScope.launch { reportsRepository.mapIncidents.collect { list -> _uiState.update { it.copy(incidents = list) } } }
+        viewModelScope.launch {
+            reportsRepository.mapIncidents.collect { list ->
+                _uiState.update { state ->
+                    val focused = if (!focusHandled) {
+                        focusReportId?.let { id -> list.firstOrNull { it.report.id == id } }
+                    } else {
+                        null
+                    }
+                    state.copy(
+                        incidents = list,
+                        selectedIncident = focused ?: state.selectedIncident,
+                        focusIncident = focused,
+                    )
+                }
+            }
+        }
         viewModelScope.launch { reportsRepository.loadState.collect { state -> _uiState.update { it.copy(reportsLoadState = state) } } }
         viewModelScope.launch { reportsRepository.refresh() }
     }
@@ -76,6 +102,11 @@ class MapViewModel @Inject constructor(
 
     fun onDismissSheet() {
         _uiState.update { it.copy(selectedIncident = null) }
+    }
+
+    fun onFocusHandled() {
+        focusHandled = true
+        _uiState.update { it.copy(focusIncident = null) }
     }
 
     fun onMapLoadStateChanged(state: MapLoadState) {

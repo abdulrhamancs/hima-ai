@@ -85,6 +85,7 @@ fun MapMarkerPin(
 fun severityMarkerColor(severity: Severity): Color {
     val colors = LocalHimaColors.current
     return when (severity) {
+        Severity.UNKNOWN -> colors.green
         Severity.LOW -> colors.severityLow
         Severity.MEDIUM -> colors.severityMid
         Severity.HIGH -> colors.severityHigh

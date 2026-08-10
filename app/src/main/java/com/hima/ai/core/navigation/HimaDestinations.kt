@@ -12,10 +12,11 @@ object HimaDestinations {
     const val SIGN_UP = "sign_up"
     const val HOME = "home"
     const val MAP = "map"
+    const val MAP_ARG_REPORT_ID = "focusReportId"
+    const val MAP_ROUTE = "map?$MAP_ARG_REPORT_ID={$MAP_ARG_REPORT_ID}"
     const val NEW_REPORT = "new_report"
     const val ANALYSIS = "analysis"
-    /** Where a recyclable/reusable-item analysis lands instead of the report
-     *  flow — it's never written to the reports table, so there's no id. */
+    /** Circular-economy decision screen shown before opening the persisted report. */
     const val RECYCLABLE_RESULT = "recyclable_result"
     const val INVESTIGATION = "investigation"
     const val HISTORY = "history"
@@ -27,17 +28,19 @@ object HimaDestinations {
 
     fun capture(source: String): String = "capture/$source"
 
+    fun map(reportId: String? = null): String =
+        if (reportId.isNullOrBlank()) MAP else "$MAP?$MAP_ARG_REPORT_ID=$reportId"
+
     /** Query-arg name carrying which report to open. */
     const val REPORT_ARG_ID = "reportId"
 
     /**
-     * The final-report route. [REPORT_ARG_ID] is optional: it is absent for a
-     * report that was just analysed (the flow's own result) and present when
-     * opening an existing report from Home, History, or a map marker.
+     * The final-report route. [REPORT_ARG_ID] remains optional for graph
+     * compatibility, but persisted reports are always opened with their id.
      */
     const val REPORT_ROUTE = "report?$REPORT_ARG_ID={$REPORT_ARG_ID}"
 
-    /** Builds the report route, omitting the argument for a freshly analysed report. */
+    /** Builds a report route, omitting the optional argument only when no id is supplied. */
     fun report(reportId: String? = null): String =
         if (reportId.isNullOrBlank()) "report" else "report?$REPORT_ARG_ID=$reportId"
 }

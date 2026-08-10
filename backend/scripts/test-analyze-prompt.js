@@ -9,9 +9,8 @@
 //      (the part before "__" is just for your own reference in the table)
 //   2. node scripts/test-analyze-prompt.js <base_url> <access_token>
 //
-// Note: any environmental_incident result is a real save to the reports
-// table (same as a real user hitting /analyze) — recyclable_waste results
-// save nothing.
+// Note: every successful environmental_incident or recyclable_waste result
+// is a real save to the reports table, exactly like a user hitting /analyze.
 const fs = require("fs");
 const path = require("path");
 

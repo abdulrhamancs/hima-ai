@@ -3,9 +3,10 @@ const express = require("express");
 const router = express.Router();
 const { randomUUID } = require("crypto");
 const { createUserClient } = require("../config/supabase");
-const { analyzeImage, mapIssueTypeToEnum, mapSeverity } = require("../config/gemini");
+const { analyzeImage } = require("../config/gemini");
 const upload = require("../config/multer");
 const authMiddleware = require("../middleware/authMiddleware");
+const { mapIssueTypeToReportType, mapRiskLevelToSeverity } = require("../domain/reportClassification");
 
 const EXT_BY_MIME = {
   "image/jpeg": "jpg",
@@ -21,7 +22,7 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
       return res.status(400).json({ error: "image file is required" });
     }
 
-    const { description } = req.body;
+    const { description, language } = req.body;
     const lat = parseFloat(req.body.latitude);
     const lng = parseFloat(req.body.longitude);
 
@@ -29,7 +30,12 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
       return res.status(400).json({ error: "latitude and longitude are required and must be numbers" });
     }
 
-    const analysis = await analyzeImage(req.file.buffer, req.file.mimetype);
+    const analysis = await analyzeImage(req.file.buffer, req.file.mimetype, {
+      description,
+      latitude: lat,
+      longitude: lng,
+      language,
+    });
 
     if (!analysis.is_recognizable) {
       return res.status(422).json({
@@ -45,14 +51,10 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
       });
     }
 
-    // A recyclable/reusable item is a circular-economy result, not a field
-    // incident — it doesn't belong in the reports table (which drives the
-    // map and History), so there's nothing to upload or persist here.
-    if (analysis.result_category === "recyclable_waste") {
-      return res.json({
-        status: "success",
-        result_category: "recyclable_waste",
-        ai_result: analysis,
+    if (!["environmental_incident", "recyclable_waste"].includes(analysis.result_category)) {
+      return res.status(502).json({
+        status: "error",
+        error: "The analysis returned an unsupported result category.",
       });
     }
 
@@ -81,8 +83,12 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
         user_id: req.user.id,
         image_url: publicUrlData.publicUrl,
         description: mergedDescription,
-        type: mapIssueTypeToEnum(analysis.issue_type),
-        severity: mapSeverity(analysis.risk_level),
+        type: analysis.result_category === "recyclable_waste"
+          ? "WASTE"
+          : mapIssueTypeToReportType(analysis.issue_type),
+        severity: analysis.result_category === "recyclable_waste"
+          ? "LOW"
+          : mapRiskLevelToSeverity(analysis.risk_level),
         latitude: lat,
         longitude: lng,
         ai_analysis: analysis,

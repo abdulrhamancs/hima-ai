@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -36,6 +38,7 @@ import com.hima.ai.R
 import com.hima.ai.core.designsystem.component.HimaBottomNavigation
 import com.hima.ai.core.designsystem.component.HimaIconButton
 import com.hima.ai.core.designsystem.component.HimaTab
+import com.hima.ai.core.designsystem.component.HimaTextLink
 import com.hima.ai.core.designsystem.component.LanguageToggle
 import com.hima.ai.core.designsystem.component.ReportRow
 import com.hima.ai.core.designsystem.component.SectionHeader
@@ -45,6 +48,7 @@ import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
 import com.hima.ai.domain.model.ReportSummary
+import com.hima.ai.domain.repository.ReportsLoadState
 
 /**
  * Home — greeting, reserve health, compact counters, and the latest reports.
@@ -65,6 +69,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalHimaColors.current
     var showNotifications by remember { mutableStateOf(false) }
+    val hasReportData = uiState.loadState == ReportsLoadState.Ready || uiState.totalReports > 0
 
     Column(
         modifier = modifier
@@ -87,19 +92,33 @@ fun HomeScreen(
             item {
                 StatusIndicator(
                     label = stringResource(R.string.home_reserve_status),
-                    value = stringResource(R.string.home_reserve_status_value),
-                    note = stringResource(R.string.home_reserve_status_note),
+                    value = stringResource(
+                        when {
+                            !hasReportData -> R.string.home_reserve_status_unknown
+                            uiState.criticalAlerts > 0 -> R.string.home_reserve_status_attention
+                            else -> R.string.home_reserve_status_value
+                        },
+                    ),
+                    note = when {
+                        !hasReportData -> stringResource(R.string.home_reserve_status_loading)
+                        uiState.criticalAlerts > 0 -> stringResource(
+                            R.string.home_reserve_status_critical_note,
+                            uiState.criticalAlerts,
+                        )
+                        else -> stringResource(R.string.home_reserve_status_note)
+                    },
                     modifier = Modifier.padding(top = 18.dp),
                 )
             }
 
             item {
+                val unavailable = "—"
                 StatsRow(
                     items = listOf(
-                        uiState.totalReports.toString() to stringResource(R.string.home_stat_total),
-                        uiState.openReports.toString() to stringResource(R.string.home_stat_open),
-                        uiState.resolvedReports.toString() to stringResource(R.string.home_stat_done),
-                        uiState.criticalAlerts.toString() to stringResource(R.string.home_stat_critical),
+                        (if (hasReportData) uiState.totalReports.toString() else unavailable) to stringResource(R.string.home_stat_total),
+                        (if (hasReportData) uiState.openReports.toString() else unavailable) to stringResource(R.string.home_stat_open),
+                        (if (hasReportData) uiState.resolvedReports.toString() else unavailable) to stringResource(R.string.home_stat_done),
+                        (if (hasReportData) uiState.criticalAlerts.toString() else unavailable) to stringResource(R.string.home_stat_critical),
                     ),
                     emphasisIndex = 3,
                     emphasisColor = colors.severityCritical,
@@ -115,8 +134,30 @@ fun HomeScreen(
                 )
             }
 
-            items(uiState.recentReports, key = { it.id }) { report ->
-                ReportRow(report = report, onClick = { onReportClick(report.id) })
+            when {
+                uiState.loadState == ReportsLoadState.Loading && uiState.recentReports.isEmpty() -> item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 30.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(color = colors.green, modifier = Modifier.size(24.dp))
+                    }
+                }
+                uiState.loadState is ReportsLoadState.Error && uiState.recentReports.isEmpty() -> item {
+                    ReportsNotice(
+                        text = stringResource(R.string.reports_load_error),
+                        action = stringResource(R.string.common_retry),
+                        onAction = viewModel::onRetry,
+                    )
+                }
+                uiState.loadState == ReportsLoadState.Ready && uiState.recentReports.isEmpty() -> item {
+                    ReportsNotice(text = stringResource(R.string.reports_empty))
+                }
+                else -> items(uiState.recentReports, key = { it.id }) { report ->
+                    ReportRow(report = report, onClick = { onReportClick(report.id) })
+                }
             }
 
             item { Spacer(Modifier.height(8.dp)) }
@@ -141,6 +182,26 @@ fun HomeScreen(
                 onReportClick(id)
             },
         )
+    }
+}
+
+@Composable
+private fun ReportsNotice(
+    text: String,
+    action: String? = null,
+    onAction: () -> Unit = {},
+) {
+    val colors = LocalHimaColors.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(text = text, style = HimaTextStyles.b, color = colors.sage, textAlign = TextAlign.Center)
+        action?.let {
+            HimaTextLink(text = it, onClick = onAction, modifier = Modifier.padding(top = 8.dp))
+        }
     }
 }
 

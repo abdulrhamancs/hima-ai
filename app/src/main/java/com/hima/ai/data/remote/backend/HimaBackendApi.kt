@@ -23,6 +23,9 @@ interface HimaBackendApi {
         // Accepted by the handler and folded into the Gemini prompt as extra
         // context; it does not change which fields come back.
         @Part("description") description: RequestBody?,
+        @Part("language") language: RequestBody,
+        @Part("latitude") latitude: RequestBody,
+        @Part("longitude") longitude: RequestBody,
     ): Response<AnalyzeResponseDto>
 }
 
@@ -37,6 +40,8 @@ data class AnalyzeResponseDto(
     val status: String? = null,
     @Json(name = "result_category") val resultCategory: String? = null,
     @Json(name = "ai_result") val aiResult: AiResultDto? = null,
+    @Json(name = "report_id") val reportId: String? = null,
+    @Json(name = "image_url") val imageUrl: String? = null,
     val error: String? = null,
 )
 
@@ -45,12 +50,22 @@ data class AiResultDto(
     val description: String? = null,
     val confidence: Double? = null,
     val recommendation: String? = null,
+    @Json(name = "environmental_impact") val environmentalImpact: String? = null,
+    @Json(name = "ai_explanation") val aiExplanation: String? = null,
     // Environmental incident:
     @Json(name = "issue_type") val issueType: String? = null,
     @Json(name = "risk_score") val riskScore: Double? = null,
     @Json(name = "risk_level") val riskLevel: String? = null,
     // Recyclable waste:
     @Json(name = "material_category") val materialCategory: String? = null,
+    @Json(name = "waste_type") val wasteType: String? = null,
     @Json(name = "disposal_classification") val disposalClassification: String? = null,
+    val recyclable: Boolean? = null,
+    val reusable: Boolean? = null,
+    val repairable: Boolean? = null,
+    @Json(name = "preferred_action") val preferredAction: String? = null,
     @Json(name = "reuse_suggestion") val reuseSuggestion: String? = null,
+    @Json(name = "repair_guidance") val repairGuidance: String? = null,
+    @Json(name = "recycling_guidance") val recyclingGuidance: String? = null,
+    @Json(name = "disposal_guidance") val disposalGuidance: String? = null,
 )

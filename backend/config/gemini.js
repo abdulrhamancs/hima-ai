@@ -12,16 +12,15 @@ const chatModel = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 // موديل مخصص لتحليل الصور (يرجع JSON منظم فقط)
 //
 // نتيجتان ممكنتان يحددهما result_category:
-//  - environmental_incident: حريق/احتطاب/مخلفات/تلوث مياه/آفة نباتية — الحقول
-//    القديمة (issue_type, risk_score, risk_level, recommendation) كما هي، بلا تغيير.
+//  - environmental_incident: حريق/صيد جائر/احتطاب/تلوث خطير — الحقول القديمة
+//    (issue_type, risk_score, risk_level, recommendation) كما هي، بلا تغيير.
 //  - recyclable_waste: عنصر قابل لإعادة التدوير أو إعادة الاستخدام (بلاستيك،
 //    زجاج، معدن، ورق) — حقول جديدة فقط (material_category,
 //    disposal_classification, reuse_suggestion) تدعم اقتصاد دائري بسيط دون
 //    التعامل معه كحادثة بيئية.
-const visionModel = genAI.getGenerativeModel({
-  model: "gemini-3.6-flash",
-  generationConfig: {
+const visionGenerationConfig = {
     responseMimeType: "application/json",
+    maxOutputTokens: 2048,
     responseSchema: {
       type: "object",
       properties: {
@@ -36,11 +35,11 @@ const visionModel = genAI.getGenerativeModel({
         result_category: {
           type: "string",
           enum: ["environmental_incident", "recyclable_waste"],
-          description: "نوع النتيجة: environmental_incident لحادثة بيئية تحتاج بلاغًا (حريق، احتطاب، مخلفات، تلوث مياه، ضرر بيئي)، أو recyclable_waste لعنصر يومي قابل لإعادة التدوير أو إعادة الاستخدام (عبوة بلاستيكية، علبة معدنية، زجاجة، كرتون). يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
+          description: "نوع النتيجة: environmental_incident لحادثة بيئية تحتاج بلاغًا (حريق، صيد جائر، احتطاب، تلوث خطير، ضرر بيئي)، أو recyclable_waste لعنصر يومي قابل لإعادة التدوير أو إعادة الاستخدام (عبوة بلاستيكية، علبة معدنية، زجاجة، كرتون). يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
         },
         issue_type: {
           type: "string",
-          description: "نوع المشكلة البيئية لحالة environmental_incident فقط — واحدة من: حريق، احتطاب، مخلفات (نفايات صلبة أو بلاستيكية)، تلوث مياه، آفة نباتية، أو حالة بيئية أخرى. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
+          description: "نوع المشكلة البيئية لحالة environmental_incident فقط — واحدة من: حريق، احتطاب، صيد جائر، نفايات أو تلوث، آفة نباتية، حيوان مصاب، حيوان نافق، أو حالة بيئية أخرى. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
         },
         description: {
           type: "string",
@@ -49,6 +48,10 @@ const visionModel = genAI.getGenerativeModel({
         environmental_impact: {
           type: "string",
           description: "الأثر البيئي المترتب على هذه الحالة (مثل: تؤثر على الحياة الفطرية، تلوث مصادر المياه، تدهور التربة). يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
+        },
+        ai_explanation: {
+          type: "string",
+          description: "شرح موجز لماذا تم اختيار التصنيف والإجراء، دون ادعاءات لا تدعمها الصورة",
         },
         risk_score: {
           type: "number",
@@ -64,11 +67,32 @@ const visionModel = genAI.getGenerativeModel({
         },
         recommendation: {
           type: "string",
-          description: "الإجراء المستدام المقترح للتعامل مع الحالة (لحالة environmental_incident). لحالات المخلفات والتلوث، فضّل حلول الاقتصاد الدائري (الفرز، إعادة التدوير، إعادة الاستخدام، تقليل الهدر). لحالات الطوارئ (حريق، احتطاب، آفة نباتية)، اذكر الإجراء البيئي المناسب. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
+          description: "الإجراء المستدام المقترح للتعامل مع الحالة. لحالات النفايات والتلوث، فضّل حلول الاقتصاد الدائري (الفرز، إعادة التدوير، إعادة الاستخدام، تقليل الهدر). لحالات الطوارئ (حريق، صيد جائر، حيوان مصاب أو نافق، آفة نباتية)، اذكر الإجراء البيئي المناسب. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
         },
         material_category: {
           type: "string",
           description: "نوع المادة (لحالة recyclable_waste فقط) مثل: بلاستيك، زجاج، معدن، ورق وكرتون، عضوي، إلكتروني",
+        },
+        waste_type: {
+          type: "string",
+          description: "نوع العنصر أو النفاية المرئية، بأكثر قدر من الدقة التي تدعمها الصورة",
+        },
+        recyclable: {
+          type: "boolean",
+          description: "هل تدعم الصورة أن العنصر قابل لإعادة التدوير؟ لا تفترض true عند عدم اليقين",
+        },
+        reusable: {
+          type: "boolean",
+          description: "هل يمكن إبقاء العنصر في الاستخدام بأمان وفق ما تظهره الصورة؟",
+        },
+        repairable: {
+          type: "boolean",
+          description: "هل يبدو الإصلاح أو التجديد مسارًا معقولًا؟ اتركه بلا استخدام إذا لم تدعم الصورة ذلك",
+        },
+        preferred_action: {
+          type: "string",
+          enum: ["reuse", "repair_refurbish", "donate_repurpose", "recycle", "material_recovery", "safe_disposal"],
+          description: "أفضل مسار مدعوم وفق الأولوية: إعادة الاستخدام، الإصلاح، التبرع/إعادة التوظيف، التدوير، استعادة المواد، ثم التخلص الآمن",
         },
         disposal_classification: {
           type: "string",
@@ -78,18 +102,75 @@ const visionModel = genAI.getGenerativeModel({
           type: "string",
           description: "اقتراح اختياري لإعادة استخدام إبداعي (لحالة recyclable_waste فقط) — اتركه فارغًا لو لا يوجد اقتراح مناسب لهذا العنصر بعينه",
         },
+        repair_guidance: {
+          type: "string",
+          description: "خطوة إصلاح/تجديد محددة وآمنة عندما يكون هذا المسار مناسبًا",
+        },
+        recycling_guidance: {
+          type: "string",
+          description: "إرشاد للفرز والتدوير دون اختراع مرافق أو نقاط جمع",
+        },
+        disposal_guidance: {
+          type: "string",
+          description: "إرشاد آمن للتخلص عندما لا يكون الاسترداد مناسبًا. النفايات الإلكترونية/الخطرة لا تُوجَّه إلى النفايات المنزلية العادية",
+        },
       },
-      required: ["is_recognizable", "is_environmental", "confidence"],
+      // Gemini structured output is most reliable when every key is required.
+      // Category-specific fields use neutral empty/false/zero values and are
+      // ignored by the other Android result path.
+      required: [
+        "is_recognizable",
+        "is_environmental",
+        "result_category",
+        "issue_type",
+        "description",
+        "environmental_impact",
+        "ai_explanation",
+        "risk_score",
+        "risk_level",
+        "confidence",
+        "recommendation",
+        "material_category",
+        "waste_type",
+        "recyclable",
+        "reusable",
+        "repairable",
+        "preferred_action",
+        "disposal_classification",
+        "reuse_suggestion",
+        "repair_guidance",
+        "recycling_guidance",
+        "disposal_guidance",
+      ],
     },
-  },
+};
+
+const visionModel = genAI.getGenerativeModel({
+  model: "gemini-3.6-flash",
+  generationConfig: visionGenerationConfig,
+});
+
+// Gemini quotas are enforced per Google project and model. Keep the stronger
+// multimodal model as primary, but let an exhausted per-model allowance fall
+// back to Google's stable, lower-cost structured-extraction model. Android
+// continues to use the same backend endpoint and never sees either API key or
+// model implementation detail.
+const visionFallbackModel = genAI.getGenerativeModel({
+  model: "gemini-3.5-flash-lite",
+  generationConfig: visionGenerationConfig,
 });
 
 const ANALYZE_IMAGE_PROMPT =
-  "حلل هذه الصورة لتطبيق حِمى (Hima AI)، المستخدم لرصد الحالات البيئية بالمحميات الطبيعية ولتحديد العناصر القابلة لإعادة التدوير أو إعادة الاستخدام. أولاً حدد هل محتواها واضح بدرجة كافية (is_recognizable)، وهل هي مرتبطة بالمجال البيئي أو تُظهر عنصرًا قابلًا لإعادة التدوير/الاستخدام (is_environmental). إذا لم تكن كذلك، لا تكتب وصفًا أو تحليلاً تفصيليًا. فقط في حال كانت الصورة واضحة ومرتبطة بذلك، حدد result_category: (أ) environmental_incident لحادثة بيئية تحتاج بلاغًا — صنّف issue_type إلى واحدة من: حريق، احتطاب غير نظامي، مخلفات (نفايات صلبة أو بلاستيكية)، تلوث مياه، آفة نباتية، أو حالة بيئية أخرى؛ واملأ risk_score وrisk_level؛ أو (ب) recyclable_waste لعنصر يومي قابل لإعادة التدوير أو إعادة الاستخدام (بلاستيك، زجاج، معدن، ورق) — املأ material_category وdisposal_classification وreuse_suggestion الاختياري. بكلتا الحالتين، اذكر الأثر البيئي (environmental_impact) واقترح إجراءً مستدامًا (recommendation) — يفضَّل حلول الاقتصاد الدائري (فرز، تدوير، إعادة استخدام) لحالات المخلفات والعناصر القابلة لإعادة التدوير، ومعالجة المصدر واحتواء التسرب لحالات تلوث المياه، والإجراء البيئي المناسب لحالات الطوارئ الأخرى.";
+  "Analyze the image for Hima AI. First set is_recognizable and is_environmental, then set result_category to exactly environmental_incident or recyclable_waste. " +
+  "Return every schema key exactly once. Keep titles under 12 words and every explanation or guidance field under 60 words. Do not include meta commentary, checklists, prompt-compliance statements, or repeated text. " +
+  "For fields irrelevant to the selected category, use an empty string, false, or zero as appropriate; Android will ignore them. " +
+  "For environmental incidents, use one supported issue_type and provide risk, environmental impact, explanation, and a concrete recommendation. " +
+  "For recyclable_waste, identify only what the image supports, explain uncertainty, and apply this recovery hierarchy: reuse first; then repair/refurbish; then donation/repurposing where appropriate; then recycling or material recovery; and safe disposal only when recovery is inappropriate. " +
+  "For mixed, damaged, or visually ambiguous items, use only a broad supported material label, explicitly state the uncertainty, and lower confidence instead of guessing a precise material. " +
+  "Set reusable, repairable, recyclable, and preferred_action consistently. Never recommend ordinary household trash for e-waste, batteries, or hazardous material; use specialized collection/recovery guidance without inventing a facility. " +
+  "Do not invent prices, statistics, collection points, facilities, or unsupported material claims.";
 
 // Shared by /analyze and POST /reports so both call Gemini identically.
-// `context` (optional) folds the caller's own description/location into the
-// prompt as extra hints — it never changes which fields come back.
 async function analyzeImage(buffer, mimeType, context = {}) {
   const imagePart = {
     inlineData: {
@@ -98,39 +179,27 @@ async function analyzeImage(buffer, mimeType, context = {}) {
     },
   };
 
-  let prompt = ANALYZE_IMAGE_PROMPT;
-  if (context.description) prompt += ` ملاحظة المستخدم: "${context.description}".`;
-  if (context.latitude && context.longitude) prompt += ` إحداثيات الموقع: ${context.latitude}, ${context.longitude}.`;
+  const languageInstruction = context.language === "en"
+    ? "Return every human-readable field in English."
+    : "Return every human-readable field in Arabic.";
+  const descriptionContext = context.description
+    ? ` User description: ${String(context.description).slice(0, 500)}.`
+    : "";
+  const locationContext = Number.isFinite(context.latitude) && Number.isFinite(context.longitude)
+    ? ` Location coordinates: ${context.latitude}, ${context.longitude}.`
+    : "";
+  const prompt = `${ANALYZE_IMAGE_PROMPT} ${languageInstruction}${descriptionContext}${locationContext}`;
 
-  const result = await visionModel.generateContent([prompt, imagePart]);
+  let result;
+  try {
+    result = await visionModel.generateContent([prompt, imagePart]);
+  } catch (error) {
+    if (error?.status !== 429) throw error;
+
+    console.warn("Primary Gemini vision quota exceeded; using the stable vision fallback model.");
+    result = await visionFallbackModel.generateContent([prompt, imagePart]);
+  }
   return JSON.parse(result.response.text());
 }
 
-// Gemini's issue_type is free text ("حريق"), not the enum the reports table's
-// type column requires ("FIRE") — this maps between them. Shared by /analyze
-// and POST /reports so both classify identically.
-const TYPE_KEYWORDS = [
-  { type: "FIRE", keywords: ["حريق", "دخان", "fire", "smoke"] },
-  { type: "ILLEGAL_LOGGING", keywords: ["احتطاب", "قطع أشجار", "قطع الأشجار", "logging", "deforestation"] },
-  { type: "WATER_POLLUTION", keywords: ["تلوث مياه", "تلوث", "تسرب", "pollution", "spill", "contamination"] },
-  { type: "WASTE", keywords: ["مخلفات بلاستيكية", "مخلفات", "نفايات", "قمامة", "waste", "garbage", "plastic"] },
-  { type: "PLANT_DISEASE", keywords: ["آفة نباتية", "آفة", "مرض نباتي", "plant disease", "pest"] },
-];
-
-function mapIssueTypeToEnum(text) {
-  if (!text) return "OTHER";
-  const normalized = text.toLowerCase();
-  for (const { type, keywords } of TYPE_KEYWORDS) {
-    if (keywords.some((k) => normalized.includes(k.toLowerCase()))) {
-      return type;
-    }
-  }
-  return "OTHER";
-}
-
-function mapSeverity(riskLevel) {
-  const upper = String(riskLevel || "").toUpperCase();
-  return ["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(upper) ? upper : "LOW";
-}
-
-module.exports = { chatModel, visionModel, analyzeImage, mapIssueTypeToEnum, mapSeverity };
+module.exports = { chatModel, visionModel, analyzeImage };

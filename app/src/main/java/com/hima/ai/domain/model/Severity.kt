@@ -9,6 +9,7 @@ import com.hima.ai.R
  * `core/designsystem`.
  */
 enum class Severity(@StringRes val labelRes: Int) {
+    UNKNOWN(R.string.severity_unknown),
     LOW(R.string.severity_low),
     MEDIUM(R.string.severity_medium),
     HIGH(R.string.severity_high),

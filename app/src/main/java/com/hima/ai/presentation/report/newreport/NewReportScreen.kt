@@ -1,5 +1,8 @@
 package com.hima.ai.presentation.report.newreport
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,11 +23,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,6 +47,7 @@ import com.hima.ai.core.designsystem.component.StepIndicator
 import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
+import com.hima.ai.core.location.hasLocationPermission
 
 /**
  * New report — attach evidence, confirm the auto-detected location, add an
@@ -56,6 +65,27 @@ fun NewReportScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalHimaColors.current
+    val context = LocalContext.current
+    var locationPermissionDenied by rememberSaveable { mutableStateOf(false) }
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) {
+        if (context.hasLocationPermission()) {
+            locationPermissionDenied = false
+            onAnalyzeClick()
+        } else {
+            locationPermissionDenied = true
+        }
+    }
+    val analyzeWithLocation = remember(context, onAnalyzeClick) {
+        {
+            if (context.hasLocationPermission()) {
+                onAnalyzeClick()
+            } else {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -132,12 +162,22 @@ fun NewReportScreen(
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
-                HimaPrimaryButton(
-                    text = stringResource(R.string.new_report_analyze),
-                    onClick = onAnalyzeClick,
-                    leadingIconRes = R.drawable.ic_spark,
-                    modifier = Modifier.padding(top = 26.dp),
-                )
+                Column {
+                    HimaPrimaryButton(
+                        text = stringResource(R.string.new_report_analyze),
+                        onClick = analyzeWithLocation,
+                        leadingIconRes = R.drawable.ic_spark,
+                        modifier = Modifier.padding(top = 26.dp),
+                    )
+                    if (locationPermissionDenied) {
+                        Text(
+                            text = stringResource(R.string.analysis_location_required),
+                            style = HimaTextStyles.m,
+                            color = colors.severityCritical,
+                            modifier = Modifier.padding(top = 10.dp),
+                        )
+                    }
+                }
             }
             Spacer(Modifier.height(30.dp))
         }
@@ -164,7 +204,7 @@ private fun LocationField(modifier: Modifier = Modifier) {
             modifier = Modifier.size(19.dp),
         )
         Text(
-            text = stringResource(R.string.new_report_location_value),
+            text = stringResource(R.string.new_report_location_pending),
             style = HimaTextStyles.t.copy(fontSize = 15.sp),
             color = colors.ink,
         )

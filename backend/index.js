@@ -2,7 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { chatModel, analyzeImage, mapIssueTypeToEnum, mapSeverity } = require("./config/gemini");
+const { chatModel, analyzeImage } = require("./config/gemini");
 const upload = require("./config/multer");
 const supabase = require("./config/supabase");
 const authRoutes = require("./routes/auth");
@@ -10,6 +10,7 @@ const reportsRoutes = require("./routes/reports");
 const firesRoutes = require("./routes/fires");
 const protectedAreasRoutes = require("./routes/protectedAreas");
 const authMiddleware = require("./middleware/authMiddleware");
+const { mapIssueTypeToReportType, mapRiskLevelToSeverity } = require("./domain/reportClassification");
 
 const app = express();
 app.use(cors());
@@ -52,13 +53,16 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
       return res.status(400).json({ error: "image file is required" });
     }
 
-    const { latitude, longitude, description: userDescription } = req.body;
+    const { latitude, longitude, description: userDescription, language } = req.body;
     const userId = req.user.id;
 
+    const parsedLatitude = Number.parseFloat(latitude);
+    const parsedLongitude = Number.parseFloat(longitude);
     const analysis = await analyzeImage(req.file.buffer, req.file.mimetype, {
       description: userDescription,
-      latitude,
-      longitude,
+      latitude: parsedLatitude,
+      longitude: parsedLongitude,
+      language,
     });
 
     if (!analysis.is_recognizable || !analysis.is_environmental) {
@@ -68,14 +72,10 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
       });
     }
 
-    // A recyclable/reusable item is a circular-economy result, not a field
-    // incident — it doesn't belong in the reports table (which drives the
-    // map and History), so there's nothing to upload or persist here.
-    if (analysis.result_category === "recyclable_waste") {
-      return res.json({
-        status: "success",
-        result_category: "recyclable_waste",
-        ai_result: analysis,
+    if (!["environmental_incident", "recyclable_waste"].includes(analysis.result_category)) {
+      return res.status(502).json({
+        status: "error",
+        error: "The analysis returned an unsupported result category.",
       });
     }
 
@@ -84,20 +84,29 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
     // regardless of the column-name fix below.
     const userSupabase = supabase.createUserClient(req.token);
 
-    const fileName = `reports/${Date.now()}_${req.file.originalname}`;
+    // Reuse the same bucket and user-scoped path as POST /reports. Storage
+    // policies grant each signed-in user access to their own top-level folder;
+    // the old `incident-images/reports/...` path was rejected by that policy.
+    const imageBucket = "report-images";
+    const safeOriginalName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const fileName = `${userId}/${Date.now()}-${safeOriginalName}`;
     const { error: storageError } = await userSupabase
       .storage
-      .from("report-images")
+      .from(imageBucket)
       .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
 
     if (storageError) {
       console.error("Storage Error:", storageError);
-      return res.status(500).json({ error: "Something went wrong while uploading the image. Please try again." });
+      return res.status(500).json({ error: "Something went wrong while saving the evidence image. Please try again." });
     }
 
-    const { data: publicUrlData } = userSupabase.storage.from("report-images").getPublicUrl(fileName);
+    const { data: publicUrlData } = userSupabase.storage.from(imageBucket).getPublicUrl(fileName);
     const imageUrl = publicUrlData ? publicUrlData.publicUrl : "";
 
+    // Column names match the live `reports` table (type/severity/recommended_action/
+    // ai_analysis) — the previous version of this insert (issue_type/ai_description/
+    // risk_level/investigation_question/status:"pending_question") named columns
+    // that don't exist on that table, so every /analyze call failed at this step.
     const { data: dbData, error: dbError } = await userSupabase
       .from("reports")
       .insert({
@@ -106,11 +115,15 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
         description: analysis.description,
-        type: mapIssueTypeToEnum(analysis.issue_type),
-        severity: mapSeverity(analysis.risk_level),
+        type: analysis.result_category === "recyclable_waste"
+          ? "WASTE"
+          : mapIssueTypeToReportType(analysis.issue_type),
+        severity: analysis.result_category === "recyclable_waste"
+          ? "LOW"
+          : mapRiskLevelToSeverity(analysis.risk_level),
         recommended_action: analysis.recommendation,
-        confidence: analysis.confidence,
         environmental_impact: analysis.environmental_impact ?? null,
+        confidence: analysis.confidence,
         ai_analysis: analysis,
         status: "OPEN"
       })
@@ -127,14 +140,24 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
 
     res.json({
       status: "success",
-      result_category: "environmental_incident",
+      result_category: analysis.result_category,
       message: "Report generated and saved successfully",
       report_id: dbData.id,
       ai_result: analysis,
-      image_url: imageUrl
+      image_url: imageUrl,
+      latitude: dbData.latitude,
+      longitude: dbData.longitude,
+      created_at: dbData.created_at
     });
 
   } catch (error) {
+    if (error?.status === 429) {
+      const quotaMessage = req.body?.language === "en"
+        ? "AI analysis is temporarily unavailable because the daily service limit was reached. Please try again later."
+        : "تحليل الذكاء الاصطناعي غير متاح مؤقتًا بسبب بلوغ الحد اليومي للخدمة. يرجى المحاولة لاحقًا.";
+      return res.status(429).json({ error: quotaMessage });
+    }
+
     // Logged in full for debugging; the client only ever gets a clean,
     // generic message — the real error (Gemini internals, stack traces,
     // API URLs) has no business reaching the app's UI.

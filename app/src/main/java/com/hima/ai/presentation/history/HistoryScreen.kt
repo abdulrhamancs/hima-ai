@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,11 +34,13 @@ import com.hima.ai.core.designsystem.component.FilterSegments
 import com.hima.ai.core.designsystem.component.HimaBottomNavigation
 import com.hima.ai.core.designsystem.component.HimaIconButton
 import com.hima.ai.core.designsystem.component.HimaTab
+import com.hima.ai.core.designsystem.component.HimaTextLink
 import com.hima.ai.core.designsystem.component.ReportRow
 import com.hima.ai.core.designsystem.component.ScreenHeader
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
 import com.hima.ai.domain.model.Severity
+import com.hima.ai.domain.repository.ReportsLoadState
 
 /**
  * Reports history — one segmented filter over a flat list. Rows are the same
@@ -86,7 +90,35 @@ fun HistoryScreen(
         )
 
         val reports = uiState.visibleReports
-        if (reports.isEmpty()) {
+        if (uiState.loadState == ReportsLoadState.Loading && uiState.allReports.isEmpty()) {
+            Box(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = colors.green, modifier = Modifier.size(26.dp))
+            }
+        } else if (uiState.loadState is ReportsLoadState.Error && uiState.allReports.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.reports_load_error),
+                    style = HimaTextStyles.b,
+                    color = colors.sage,
+                    textAlign = TextAlign.Center,
+                )
+                HimaTextLink(
+                    text = stringResource(R.string.common_retry),
+                    onClick = viewModel::onRetry,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+        } else if (reports.isEmpty()) {
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -95,7 +127,9 @@ fun HistoryScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = stringResource(R.string.history_empty),
+                    text = stringResource(
+                        if (uiState.allReports.isEmpty()) R.string.reports_empty else R.string.history_empty,
+                    ),
                     style = HimaTextStyles.b,
                     color = colors.sage,
                     textAlign = TextAlign.Center,
@@ -151,7 +185,7 @@ private fun SeverityFilterButton(
                 text = { Text(stringResource(R.string.history_filter_all)) },
                 onClick = { onSelect(null); expanded = false },
             )
-            Severity.entries.forEach { severity ->
+            Severity.entries.filterNot { it == Severity.UNKNOWN }.forEach { severity ->
                 DropdownMenuItem(
                     text = { Text(stringResource(severity.labelRes)) },
                     onClick = { onSelect(severity); expanded = false },

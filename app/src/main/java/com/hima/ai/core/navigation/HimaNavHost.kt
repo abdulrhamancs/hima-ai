@@ -146,8 +146,18 @@ fun HimaNavHost(
             )
         }
 
-        composable(HimaDestinations.MAP) { entry ->
+        composable(
+            route = HimaDestinations.MAP_ROUTE,
+            arguments = listOf(
+                navArgument(HimaDestinations.MAP_ARG_REPORT_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+            ),
+        ) { entry ->
             MapScreen(
+                onBackClick = { back(entry) },
                 onHomeClick = { goHome(entry) },
                 onNewReportClick = { push(entry, HimaDestinations.NEW_REPORT) },
                 onReportsClick = { goTab(entry, HimaDestinations.HISTORY) },
@@ -182,15 +192,15 @@ fun HimaNavHost(
         composable(HimaDestinations.ANALYSIS) { entry ->
             AnalysisScreen(
                 onBackClick = { back(entry) },
-                onAnalysisComplete = { category ->
+                onAnalysisComplete = { analysis ->
                     // Drop the capture + analysis steps so Back returns to
-                    // Home rather than replaying the flow either way.
+                    // the originating Home/Map/History screen.
                     if (entry.isCurrent()) {
-                        val destination = when (category) {
-                            // No id — this is the report the flow just produced.
-                            AnalysisResultCategory.ENVIRONMENTAL_INCIDENT -> HimaDestinations.report()
-                            // Never written to the reports table, so there is
-                            // no report route to send this to.
+                        val destination = when (analysis.category) {
+                            // Open the exact report just persisted by /analyze.
+                            AnalysisResultCategory.ENVIRONMENTAL_INCIDENT -> HimaDestinations.report(analysis.reportId)
+                            // Waste gets its own decision screen before the
+                            // user optionally opens the unified report.
                             AnalysisResultCategory.RECYCLABLE_WASTE -> HimaDestinations.RECYCLABLE_RESULT
                         }
                         navController.navigate(destination) {
@@ -204,12 +214,19 @@ fun HimaNavHost(
         composable(HimaDestinations.RECYCLABLE_RESULT) { entry ->
             RecyclableResultScreen(
                 onBackClick = { back(entry) },
+                onViewReportClick = { reportId ->
+                    if (entry.isCurrent()) {
+                        navController.navigate(HimaDestinations.report(reportId)) {
+                            popUpTo(HimaDestinations.RECYCLABLE_RESULT) { inclusive = true }
+                        }
+                    }
+                },
                 onAnalyzeAnotherClick = {
-                    // Same shape as goTab: collapse back to Home first so
-                    // repeated "analyze another" taps don't grow the stack.
+                    // Replace only the completed result. The originating
+                    // Home/Map/History entry stays underneath the new flow.
                     if (entry.isCurrent()) {
                         navController.navigate(HimaDestinations.NEW_REPORT) {
-                            popUpTo(HimaDestinations.HOME)
+                            popUpTo(HimaDestinations.RECYCLABLE_RESULT) { inclusive = true }
                             launchSingleTop = true
                         }
                     }
@@ -230,29 +247,9 @@ fun HimaNavHost(
             ReportDetailScreen(
                 onBackClick = { back(entry) },
                 onInvestigateClick = { push(entry, HimaDestinations.INVESTIGATION) },
-                // A real push, not goTab: goTab pops everything back to Home
-                // first, which — reached from History → Report → View on Map —
-                // discarded History and Report from the stack, so Back from
-                // Map landed on Home instead of the report the ranger came
-                // from. A plain push keeps Report underneath, so Back returns
-                // to exactly the report that was open.
-                onViewOnMapClick = { push(entry, HimaDestinations.MAP) },
-                onSavedClick = { isExistingReport ->
-                    if (isExistingReport) {
-                        // Re-saving a report that's already stored doesn't
-                        // complete a flow — just return to wherever it was
-                        // opened from (History, Map, or Home).
-                        back(entry)
-                    } else {
-                        // This report is what New Report → Camera/Gallery →
-                        // Analysis just produced. Submitting it completes that
-                        // flow, which always resolves to Home — regardless of
-                        // whether "+" was tapped from Home, Map, or History —
-                        // rather than landing back on whichever tab "+" was
-                        // reached from.
-                        goHome(entry)
-                    }
-                },
+                // Keep Detail underneath the focused Map route so Back returns
+                // to the exact report and not an unrelated tab.
+                onViewOnMapClick = { reportId -> push(entry, HimaDestinations.map(reportId)) },
             )
         }
 

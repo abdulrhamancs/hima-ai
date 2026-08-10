@@ -4,13 +4,13 @@ import androidx.annotation.StringRes
 import java.time.Instant
 
 /** Whether a report is still being worked or has been closed out. */
-enum class ReportStatus { OPEN, RESOLVED }
+enum class ReportStatus { UNKNOWN, OPEN, RESOLVED }
 
 /**
  * The illustration drawn as a report's thumbnail. The prototype has no photo
  * assets, so each report kind maps to generated scene art (see `SceneThumbnail`).
  */
-enum class SceneKind { STUMP, FOREST, FIRE, WATER, VALLEY }
+enum class SceneKind { STUMP, FOREST, FIRE, WATER, WASTE, VALLEY }
 
 /**
  * One report row. String fields are [StringRes] ids rather than literals so the
@@ -25,6 +25,7 @@ data class ReportSummary(
     val id: String,
     @StringRes val titleRes: Int,
     val titleOverride: String? = null,
+    val category: IncidentCategory = IncidentCategory.OTHER,
     @StringRes val locationRes: Int,
     /** Formatted coordinates for a real report — no place-name geocoding here. */
     val locationOverride: String? = null,
@@ -34,8 +35,14 @@ data class ReportSummary(
     val severity: Severity,
     val status: ReportStatus,
     val scene: SceneKind,
+    val imageUrl: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val reasonOverride: String? = null,
     val recommendationOverride: String? = null,
+    val environmentalImpactOverride: String? = null,
+    val confidence: Int? = null,
+    val analysis: AiAnalysis? = null,
     /** 0..100, from the AI analysis — null for mock data, which keeps its fixed placeholder score. */
     val riskScore: Int? = null,
 )

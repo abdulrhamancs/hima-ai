@@ -1,26 +1,31 @@
 package com.hima.ai.presentation.history
 
 import androidx.lifecycle.ViewModel
-import com.hima.ai.data.mock.MockData
+import androidx.lifecycle.viewModelScope
+import com.hima.ai.domain.model.IncidentCategory
 import com.hima.ai.domain.model.ReportStatus
 import com.hima.ai.domain.model.ReportSummary
 import com.hima.ai.domain.model.Severity
+import com.hima.ai.domain.repository.ReportsLoadState
+import com.hima.ai.domain.repository.ReportsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-/** The three history filters, in display order. */
 enum class HistoryFilter { ALL, OPEN, RESOLVED }
 
 data class HistoryUiState(
     val filter: HistoryFilter = HistoryFilter.ALL,
     val severityFilter: Severity? = null,
     val allReports: List<ReportSummary> = emptyList(),
+    val loadState: ReportsLoadState = ReportsLoadState.Idle,
 ) {
-    /** Reports matching the active status filter and, if set, severity filter. */
     val visibleReports: List<ReportSummary>
         get() {
             val byStatus = when (filter) {
@@ -28,23 +33,55 @@ data class HistoryUiState(
                 HistoryFilter.OPEN -> allReports.filter { it.status == ReportStatus.OPEN }
                 HistoryFilter.RESOLVED -> allReports.filter { it.status == ReportStatus.RESOLVED }
             }
-            return if (severityFilter == null) byStatus else byStatus.filter { it.severity == severityFilter }
+            return severityFilter?.let { severity ->
+                byStatus.filter { it.category != IncidentCategory.WASTE && it.severity == severity }
+            } ?: byStatus
         }
 }
 
-@HiltViewModel
-class HistoryViewModel @Inject constructor() : ViewModel() {
+private data class HistorySelection(
+    val filter: HistoryFilter = HistoryFilter.ALL,
+    val severity: Severity? = null,
+)
 
-    private val _uiState = MutableStateFlow(HistoryUiState(allReports = MockData.allReports))
-    val uiState: StateFlow<HistoryUiState> = _uiState.asStateFlow()
+@HiltViewModel
+class HistoryViewModel @Inject constructor(
+    private val reportsRepository: ReportsRepository,
+) : ViewModel() {
+
+    private val selection = MutableStateFlow(HistorySelection())
+
+    val uiState: StateFlow<HistoryUiState> = combine(
+        reportsRepository.reports,
+        reportsRepository.loadState,
+        selection,
+    ) { reports, loadState, selected ->
+        HistoryUiState(
+            filter = selected.filter,
+            severityFilter = selected.severity,
+            allReports = reports,
+            loadState = loadState,
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = HistoryUiState(loadState = reportsRepository.loadState.value),
+    )
+
+    init {
+        viewModelScope.launch { reportsRepository.refresh() }
+    }
 
     fun onFilterSelected(index: Int) {
         val filter = HistoryFilter.entries.getOrNull(index) ?: return
-        _uiState.update { it.copy(filter = filter) }
+        selection.update { it.copy(filter = filter) }
     }
 
-    /** `null` clears the severity filter (shows all severities). */
     fun onSeverityFilterSelected(severity: Severity?) {
-        _uiState.update { it.copy(severityFilter = severity) }
+        selection.update { it.copy(severity = severity?.takeUnless { it == Severity.UNKNOWN }) }
+    }
+
+    fun onRetry() {
+        viewModelScope.launch { reportsRepository.refresh(force = true) }
     }
 }

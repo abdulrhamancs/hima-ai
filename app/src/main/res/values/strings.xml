@@ -50,6 +50,10 @@
     <string name="home_reserve_status">حالة المحمية</string>
     <string name="home_reserve_status_value">جيدة</string>
     <string name="home_reserve_status_note">لا توجد تنبيهات حرجة حالياً</string>
+    <string name="home_reserve_status_attention">تحتاج متابعة</string>
+    <string name="home_reserve_status_critical_note">البلاغات الحرجة التي تحتاج إلى متابعة: %1$d</string>
+    <string name="home_reserve_status_unknown">—</string>
+    <string name="home_reserve_status_loading">جاري تحديث حالة المحمية</string>
     <string name="home_stat_total">إجمالي البلاغات</string>
     <string name="home_stat_open">قيد المعالجة</string>
     <string name="home_stat_done">تمت المعالجة</string>
@@ -86,6 +90,7 @@
     <string name="cd_evidence_photo">صورة المخالفة</string>
     <string name="new_report_location">الموقع</string>
     <string name="new_report_location_value">جبل طويق — المنطقة الوسطى</string>
+    <string name="new_report_location_pending">سيتم تحديد موقع الجهاز عند بدء التحليل</string>
     <string name="new_report_description">وصف مختصر</string>
     <string name="new_report_description_optional">(اختياري)</string>
     <string name="new_report_description_hint">اكتب وصفاً مختصراً للحالة…</string>
@@ -104,6 +109,8 @@
     <string name="analysis_classification">التصنيف</string>
     <string name="analysis_confidence">نسبة الثقة</string>
     <string name="analysis_retry">إعادة المحاولة</string>
+    <string name="analysis_location_required">يلزم السماح بالوصول إلى الموقع لحفظ البلاغ على الخريطة.</string>
+    <string name="analysis_location_unavailable">تعذّر تحديد الموقع الحالي. فعّل خدمات الموقع وحاول مرة أخرى.</string>
 
     <!-- نتيجة عنصر قابل لإعادة التدوير (الاقتصاد الدائري) -->
     <string name="recyclable_result_title">نتيجة إعادة التدوير</string>
@@ -111,6 +118,34 @@
     <string name="recyclable_classification_label">التصنيف</string>
     <string name="recyclable_reuse_label">اقتراح لإعادة الاستخدام</string>
     <string name="recyclable_analyze_another">تحليل صورة أخرى</string>
+    <string name="circular_result_title">نتيجة الاقتصاد الدائري</string>
+    <string name="circular_material">المادة</string>
+    <string name="circular_reusable">قابل لإعادة الاستخدام</string>
+    <string name="circular_repairable">قابل للإصلاح</string>
+    <string name="circular_recyclable">قابل لإعادة التدوير</string>
+    <string name="circular_environmental_impact">الأثر البيئي</string>
+    <string name="circular_ai_explanation">لماذا هذه النتيجة؟</string>
+    <string name="circular_preferred_action">أفضل مسار لاسترداد القيمة</string>
+    <string name="circular_recommendation">الإجراء المستدام المقترح</string>
+    <string name="circular_how_to_act">كيفية التنفيذ</string>
+    <string name="circular_next_recovery_step">الخيار التالي لاسترداد القيمة</string>
+    <string name="circular_last_resort">عند تعذر الاسترداد</string>
+    <string name="circular_reuse_guidance">إرشادات إعادة الاستخدام</string>
+    <string name="circular_repair_guidance">إرشادات الإصلاح</string>
+    <string name="circular_recycling_guidance">إرشادات إعادة التدوير</string>
+    <string name="circular_disposal_guidance">إرشادات التخلص الآمن</string>
+    <string name="circular_low_confidence">النتيجة غير مؤكدة. افحص العنصر وتعليمات الجهة المصنّعة قبل اتخاذ الإجراء.</string>
+    <string name="circular_view_report">عرض التقرير البيئي</string>
+    <string name="circular_action_reuse">إعادة الاستخدام</string>
+    <string name="circular_action_repair">الإصلاح أو التجديد</string>
+    <string name="circular_action_donate">التبرع أو إعادة التوظيف</string>
+    <string name="circular_action_recycle">إعادة التدوير</string>
+    <string name="circular_action_material_recovery">استرداد المواد</string>
+    <string name="circular_action_safe_disposal">التخلص الآمن</string>
+    <string name="common_yes">نعم</string>
+    <string name="common_no">لا</string>
+    <string name="common_retry">حاول مرة أخرى</string>
+    <string name="circular_report_share_text">%1$s\nالإجراء المستدام: %2$s</string>
 
     <!-- Final report -->
     <string name="report_title">التقرير النهائي</string>
@@ -130,6 +165,10 @@
     <string name="report_share">مشاركة</string>
     <string name="report_ask_ai">استكمال التحقيق مع المساعد الذكي</string>
     <string name="report_saved_toast">تم حفظ التقرير</string>
+    <string name="report_view_on_map">عرض على الخريطة</string>
+    <string name="report_not_found">تعذّر العثور على هذا البلاغ</string>
+    <string name="report_location_unavailable">الموقع غير متاح</string>
+    <string name="report_status_unknown">الحالة غير محددة</string>
 
     <!-- AI investigation -->
     <string name="investigation_title">مساعد Gemini</string>
@@ -155,8 +194,11 @@
     <string name="history_filter_open">قيد المعالجة</string>
     <string name="history_filter_done">تمت المعالجة</string>
     <string name="history_empty">لا توجد بلاغات في هذا التصنيف</string>
+    <string name="reports_empty">لا توجد بلاغات حتى الآن</string>
+    <string name="reports_load_error">تعذّر تحميل البلاغات</string>
 
     <!-- Severity labels -->
+    <string name="severity_unknown">غير محدد</string>
     <string name="severity_low">منخفض</string>
     <string name="severity_medium">متوسط</string>
     <string name="severity_high">عالي</string>
@@ -172,10 +214,11 @@
     <string name="incident_vehicles">مركبات خارج المسار</string>
 
     <!-- Real report titles — singular، per IncidentCategory (map_filter_* هي نسخة التصفية بصيغة الجمع) -->
+    <string name="report_type_waste">نفايات</string>
     <string name="report_type_fire">حريق</string>
     <string name="report_type_logging">احتطاب غير قانوني</string>
     <string name="report_type_poaching">صيد جائر</string>
-    <string name="report_type_pollution">نفايات</string>
+    <string name="report_type_pollution">تلوث</string>
     <string name="report_type_wildlife">حادثة حياة برية</string>
     <string name="report_type_plant_disease">مرض نباتي</string>
     <string name="report_type_other">حادثة أخرى</string>
@@ -195,6 +238,9 @@
     <string name="time_just_now">الآن</string>
     <string name="time_ago_minutes">منذ %d دقيقة</string>
     <string name="time_ago_hours">منذ %d ساعة</string>
+    <string name="time_yesterday">أمس</string>
+    <string name="time_ago_days">منذ %d أيام</string>
+    <string name="time_unknown">الوقت غير متاح</string>
 
     <!-- Content descriptions (accessibility) -->
     <string name="cd_back">رجوع</string>
@@ -210,6 +256,7 @@
     <!-- Map -->
     <string name="map_reserve_label">محمية الملك سلمان</string>
     <string name="map_filter_all">الكل</string>
+    <string name="map_filter_waste">نفايات</string>
     <string name="map_filter_fire">حرائق</string>
     <string name="map_filter_logging">احتطاب</string>
     <string name="map_filter_poaching">صيد</string>
@@ -219,6 +266,7 @@
     <string name="map_filter_other">أخرى</string>
     <string name="map_view_report">عرض التقرير</string>
     <string name="map_empty_filter">لا توجد بلاغات من هذا النوع حالياً</string>
+    <string name="map_empty_waste">لا توجد بلاغات نفايات في هذه المنطقة</string>
     <string name="map_config_missing_title">إعداد الخريطة غير مكتمل</string>
     <string name="map_config_missing_body">لم يتم ضبط مفتاح خدمة الخرائط بعد</string>
     <string name="map_error_title">تعذّر تحميل الخريطة</string>

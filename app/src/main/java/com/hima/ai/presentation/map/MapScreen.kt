@@ -1,7 +1,6 @@
 package com.hima.ai.presentation.map
 
 import android.Manifest
-import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,7 +50,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.location.LocationServices
@@ -66,12 +64,13 @@ import com.hima.ai.core.designsystem.component.HimaTab
 import com.hima.ai.core.designsystem.component.HimaTextLink
 import com.hima.ai.core.designsystem.component.MapClusterMarker
 import com.hima.ai.core.designsystem.component.MapMarkerPin
-import com.hima.ai.core.designsystem.component.SceneArt
+import com.hima.ai.core.designsystem.component.ReportImage
 import com.hima.ai.core.designsystem.component.SeverityBadge
 import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
 import com.hima.ai.core.location.awaitCurrentLocation
+import com.hima.ai.core.location.hasLocationPermission
 import com.hima.ai.core.map.HimaMapView
 import com.hima.ai.core.map.MapConfig
 import com.hima.ai.core.map.MapLoadState
@@ -81,6 +80,7 @@ import com.hima.ai.core.map.recenterToLocation
 import com.hima.ai.domain.model.IncidentCategory
 import com.hima.ai.domain.model.MapIncident
 import com.hima.ai.domain.model.ReportStatus
+import com.hima.ai.domain.model.Severity
 import com.hima.ai.domain.repository.ReportsLoadState
 import kotlinx.coroutines.launch
 import org.maplibre.android.camera.CameraUpdateFactory
@@ -99,6 +99,7 @@ import org.maplibre.android.maps.MapLibreMap
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
+    onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
     onNewReportClick: () -> Unit,
     onReportsClick: () -> Unit,
@@ -140,6 +141,19 @@ fun MapScreen(
     // their own trigger.
     LaunchedEffect(map, uiState.visibleIncidents, uiState.userLocation) {
         map?.let(::refreshProjections)
+    }
+
+    LaunchedEffect(map, uiState.focusIncident) {
+        val currentMap = map ?: return@LaunchedEffect
+        val incident = uiState.focusIncident ?: return@LaunchedEffect
+        currentMap.animateCamera(
+            CameraUpdateFactory.newLatLngZoom(
+                LatLng(incident.latitude, incident.longitude),
+                REPORT_FOCUS_ZOOM,
+            ),
+            REPORT_FOCUS_DURATION_MS,
+        )
+        viewModel.onFocusHandled()
     }
 
     DisposableEffect(map) {
@@ -281,7 +295,10 @@ fun MapScreen(
                 )
                 uiState.mapLoadState == MapLoadState.Ready &&
                     uiState.reportsLoadState == ReportsLoadState.Ready &&
-                    uiState.visibleIncidents.isEmpty() -> EmptyFilterNotice(modifier = Modifier.align(Alignment.Center))
+                    uiState.visibleIncidents.isEmpty() -> EmptyFilterNotice(
+                        filter = uiState.filter,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
                 else -> Unit
             }
 
@@ -308,16 +325,18 @@ fun MapScreen(
 
     val incident = uiState.selectedIncident
     if (incident != null) {
-        // Without this, system Back skipped the sheet entirely and popped
-        // the Map screen itself — one press took the ranger all the way back
-        // to Home instead of just closing the incident sheet.
-        BackHandler(onBack = viewModel::onDismissSheet)
+        // Browsing the Map dismisses the selected marker normally. A focused
+        // route opened by Detail returns to that same report in one press.
+        val dismissSelection = {
+            if (viewModel.openedForFocusedReport) onBackClick() else viewModel.onDismissSheet()
+        }
+        BackHandler(onBack = dismissSelection)
         val sheetState = rememberModalBottomSheetState()
         val distanceLabel = uiState.userLocation?.let { userLocation ->
             distanceBearing(userLocation, LatLng(incident.latitude, incident.longitude)).formatLabel()
         }
         ModalBottomSheet(
-            onDismissRequest = viewModel::onDismissSheet,
+            onDismissRequest = dismissSelection,
             sheetState = sheetState,
             containerColor = colors.bg,
             shape = RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet),
@@ -335,9 +354,8 @@ fun MapScreen(
     }
 }
 
-private fun android.content.Context.hasLocationPermission(): Boolean =
-    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
-        PackageManager.PERMISSION_GRANTED
+private const val REPORT_FOCUS_ZOOM = 15.0
+private const val REPORT_FOCUS_DURATION_MS = 700
 
 /** Animates the camera to a cluster's geographic centroid at a closer zoom —
  *  the real-map equivalent of the old fraction-space "zoom to point". */
@@ -406,7 +424,7 @@ private fun MapOverlayControls(
 
 /** Shown over the map when the active filter matches no markers. */
 @Composable
-private fun EmptyFilterNotice(modifier: Modifier = Modifier) {
+private fun EmptyFilterNotice(filter: IncidentCategory?, modifier: Modifier = Modifier) {
     val colors = LocalHimaColors.current
     Box(
         modifier = modifier
@@ -416,7 +434,9 @@ private fun EmptyFilterNotice(modifier: Modifier = Modifier) {
             .padding(horizontal = 18.dp, vertical = 14.dp),
     ) {
         Text(
-            text = stringResource(R.string.map_empty_filter),
+            text = stringResource(
+                if (filter == IncidentCategory.WASTE) R.string.map_empty_waste else R.string.map_empty_filter,
+            ),
             style = HimaTextStyles.b,
             color = colors.sage,
             textAlign = TextAlign.Center,
@@ -501,13 +521,14 @@ private fun IncidentSheetContent(
             .padding(horizontal = 20.dp, vertical = 6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier
+            ReportImage(
+                imageUrl = report.imageUrl,
+                scene = report.scene,
+                contentDescription = report.titleOverride ?: stringResource(report.titleRes),
+                modifier = Modifier
                     .size(58.dp)
                     .clip(RoundedCornerShape(HimaRadius.thumb)),
-            ) {
-                SceneArt(kind = report.scene, modifier = Modifier.fillMaxSize())
-            }
+            )
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -532,13 +553,15 @@ private fun IncidentSheetContent(
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
-                SeverityBadge(report.severity)
+                if (report.category != IncidentCategory.WASTE && report.severity != Severity.UNKNOWN) {
+                    SeverityBadge(report.severity)
+                }
                 Text(
                     text = stringResource(
-                        if (report.status == ReportStatus.OPEN) {
-                            R.string.history_filter_open
-                        } else {
-                            R.string.history_filter_done
+                        when (report.status) {
+                            ReportStatus.OPEN -> R.string.history_filter_open
+                            ReportStatus.RESOLVED -> R.string.history_filter_done
+                            ReportStatus.UNKNOWN -> R.string.report_status_unknown
                         },
                     ),
                     style = HimaTextStyles.m.copy(fontSize = 11.sp),

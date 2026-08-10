@@ -25,7 +25,8 @@ data class DistanceBearing(val meters: Float, val bearingDegrees: Float) {
         } else {
             String.format(Locale.US, "%.1f km", meters / 1000f)
         }
-        return "$distanceText · $compassPoint"
+        // Direction and Latin units must retain their order inside Arabic UI.
+        return "\u2066$distanceText · $compassPoint\u2069"
     }
 }
 

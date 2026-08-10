@@ -1,13 +1,19 @@
 package com.hima.ai.presentation.home
 
 import androidx.lifecycle.ViewModel
-import com.hima.ai.data.mock.MockData
+import androidx.lifecycle.viewModelScope
+import com.hima.ai.domain.model.ReportStatus
 import com.hima.ai.domain.model.ReportSummary
+import com.hima.ai.domain.model.Severity
+import com.hima.ai.domain.repository.ReportsLoadState
+import com.hima.ai.domain.repository.ReportsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val totalReports: Int = 0,
@@ -15,24 +21,38 @@ data class HomeUiState(
     val resolvedReports: Int = 0,
     val criticalAlerts: Int = 0,
     val recentReports: List<ReportSummary> = emptyList(),
+    val loadState: ReportsLoadState = ReportsLoadState.Idle,
 )
 
-/**
- * Home state. Backed by [MockData] for the prototype; swapping in a Firestore
- * repository later means changing only this class — the screen already reads
- * domain models.
- */
+/** Home derives both its counters and newest rows from the shared real repository. */
 @HiltViewModel
-class HomeViewModel @Inject constructor() : ViewModel() {
+class HomeViewModel @Inject constructor(
+    private val reportsRepository: ReportsRepository,
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(
+    val uiState: StateFlow<HomeUiState> = combine(
+        reportsRepository.reports,
+        reportsRepository.loadState,
+    ) { reports, loadState ->
         HomeUiState(
-            totalReports = MockData.totalReports,
-            openReports = MockData.openReports,
-            resolvedReports = MockData.resolvedReports,
-            criticalAlerts = MockData.criticalAlerts,
-            recentReports = MockData.recentReports,
-        ),
+            totalReports = reports.size,
+            openReports = reports.count { it.status == ReportStatus.OPEN },
+            resolvedReports = reports.count { it.status == ReportStatus.RESOLVED },
+            criticalAlerts = reports.count { it.severity == Severity.CRITICAL },
+            recentReports = reports.take(3),
+            loadState = loadState,
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = HomeUiState(loadState = reportsRepository.loadState.value),
     )
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch { reportsRepository.refresh() }
+    }
+
+    fun onRetry() {
+        viewModelScope.launch { reportsRepository.refresh(force = true) }
+    }
 }

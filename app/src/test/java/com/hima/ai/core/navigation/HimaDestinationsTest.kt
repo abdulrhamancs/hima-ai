@@ -31,6 +31,17 @@ class HimaDestinationsTest {
     }
 
     @Test
+    fun `focused map route carries the same real report id`() {
+        assertEquals("map", HimaDestinations.map())
+        assertEquals("map", HimaDestinations.map(""))
+        assertEquals("map?focusReportId=report-42", HimaDestinations.map("report-42"))
+        assertEquals(
+            "map?${HimaDestinations.MAP_ARG_REPORT_ID}={${HimaDestinations.MAP_ARG_REPORT_ID}}",
+            HimaDestinations.MAP_ROUTE,
+        )
+    }
+
+    @Test
     fun `every real report id produces a distinct route`() {
         val routes = MockData.allReports.map { HimaDestinations.report(it.id) }
         assertEquals("two reports would open the same screen", routes.size, routes.toSet().size)

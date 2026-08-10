@@ -25,6 +25,7 @@ private fun paletteFor(kind: SceneKind): ScenePalette = when (kind) {
     SceneKind.STUMP -> ScenePalette(Color(0xFFD7CEBE), Color(0xFFB6A98F), Color(0xFF8A7B60), Color(0xFF5C513E))
     SceneKind.FIRE -> ScenePalette(Color(0xFFE7D9C4), Color(0xFFD9A06A), Color(0xFFC0603A), Color(0xFF8A3A24))
     SceneKind.WATER -> ScenePalette(Color(0xFFCFD8D6), Color(0xFF9FB3B2), Color(0xFF6E8586), Color(0xFF4A5C5E))
+    SceneKind.WASTE -> ScenePalette(Color(0xFFE8ECE5), Color(0xFFD4DDD1), Color(0xFF91A38D), Color(0xFF315B45))
     SceneKind.VALLEY -> ScenePalette(Color(0xFFC6CFC4), Color(0xFF96A594), Color(0xFF63715F), Color(0xFF3C463A))
 }
 
@@ -36,10 +37,50 @@ fun SceneArt(kind: SceneKind, modifier: Modifier = Modifier) {
         when (kind) {
             SceneKind.FIRE -> drawFire(p)
             SceneKind.WATER -> drawWater(p)
+            SceneKind.WASTE -> drawWaste(p)
             SceneKind.STUMP -> drawStump(p)
             SceneKind.FOREST, SceneKind.VALLEY -> drawTrees(p)
         }
     }
+}
+
+private fun DrawScope.drawWaste(p: ScenePalette) {
+    val w = size.width
+    val h = size.height
+    drawCircle(p.mid, radius = size.minDimension * 0.28f, center = Offset(w * 0.50f, h * 0.53f), alpha = 0.16f)
+    val strokeWidth = size.minDimension * 0.055f
+    drawArc(
+        color = p.fore,
+        startAngle = 205f,
+        sweepAngle = 125f,
+        useCenter = false,
+        topLeft = Offset(w * 0.30f, h * 0.31f),
+        size = Size(w * 0.40f, h * 0.40f),
+        style = Stroke(width = strokeWidth),
+    )
+    drawArc(
+        color = p.fore,
+        startAngle = 25f,
+        sweepAngle = 125f,
+        useCenter = false,
+        topLeft = Offset(w * 0.30f, h * 0.31f),
+        size = Size(w * 0.40f, h * 0.40f),
+        style = Stroke(width = strokeWidth),
+    )
+    val topArrow = Path().apply {
+        moveTo(w * 0.69f, h * 0.42f)
+        lineTo(w * 0.60f, h * 0.39f)
+        lineTo(w * 0.66f, h * 0.49f)
+        close()
+    }
+    val bottomArrow = Path().apply {
+        moveTo(w * 0.31f, h * 0.64f)
+        lineTo(w * 0.40f, h * 0.67f)
+        lineTo(w * 0.34f, h * 0.57f)
+        close()
+    }
+    drawPath(topArrow, p.fore)
+    drawPath(bottomArrow, p.fore)
 }
 
 private fun DrawScope.ridge(from: Float, color: Color, alpha: Float = 1f) {

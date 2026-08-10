@@ -21,6 +21,8 @@ sealed interface ReportsLoadState {
  * -loaded list so opening a marker's full report never needs a second call.
  */
 interface ReportsRepository {
+    /** All real reports visible to the signed-in user, newest first. */
+    val reports: StateFlow<List<ReportSummary>>
     val mapIncidents: StateFlow<List<MapIncident>>
     val loadState: StateFlow<ReportsLoadState>
 

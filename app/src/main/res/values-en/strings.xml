@@ -50,6 +50,10 @@
     <string name="home_reserve_status">Reserve status</string>
     <string name="home_reserve_status_value">Good</string>
     <string name="home_reserve_status_note">No critical alerts right now</string>
+    <string name="home_reserve_status_attention">Needs attention</string>
+    <string name="home_reserve_status_critical_note">Critical reports needing attention: %1$d</string>
+    <string name="home_reserve_status_unknown">—</string>
+    <string name="home_reserve_status_loading">Updating reserve status</string>
     <string name="home_stat_total">Total reports</string>
     <string name="home_stat_open">In progress</string>
     <string name="home_stat_done">Resolved</string>
@@ -86,6 +90,7 @@
     <string name="cd_evidence_photo">Evidence photo</string>
     <string name="new_report_location">Location</string>
     <string name="new_report_location_value">Tuwaiq Mountain — Central Region</string>
+    <string name="new_report_location_pending">Device location will be detected when analysis starts</string>
     <string name="new_report_description">Short description</string>
     <string name="new_report_description_optional">(optional)</string>
     <string name="new_report_description_hint">Describe the situation briefly…</string>
@@ -104,6 +109,8 @@
     <string name="analysis_classification">Classification</string>
     <string name="analysis_confidence">Confidence</string>
     <string name="analysis_retry">Try again</string>
+    <string name="analysis_location_required">Location access is required to save this report on the map.</string>
+    <string name="analysis_location_unavailable">Couldn’t determine the current location. Enable location services and try again.</string>
 
     <!-- Recyclable-waste result (circular economy) -->
     <string name="recyclable_result_title">Recycling result</string>
@@ -111,6 +118,34 @@
     <string name="recyclable_classification_label">Classification</string>
     <string name="recyclable_reuse_label">Reuse suggestion</string>
     <string name="recyclable_analyze_another">Analyze another photo</string>
+    <string name="circular_result_title">Circular economy result</string>
+    <string name="circular_material">Material</string>
+    <string name="circular_reusable">Reusable</string>
+    <string name="circular_repairable">Repairable</string>
+    <string name="circular_recyclable">Recyclable</string>
+    <string name="circular_environmental_impact">Environmental impact</string>
+    <string name="circular_ai_explanation">Why this result?</string>
+    <string name="circular_preferred_action">Best value-recovery path</string>
+    <string name="circular_recommendation">Recommended sustainable action</string>
+    <string name="circular_how_to_act">How to do it</string>
+    <string name="circular_next_recovery_step">Next value-recovery option</string>
+    <string name="circular_last_resort">If recovery is not possible</string>
+    <string name="circular_reuse_guidance">Reuse guidance</string>
+    <string name="circular_repair_guidance">Repair guidance</string>
+    <string name="circular_recycling_guidance">Recycling guidance</string>
+    <string name="circular_disposal_guidance">Safe-disposal guidance</string>
+    <string name="circular_low_confidence">This result is uncertain. Inspect the item and its manufacturer guidance before acting.</string>
+    <string name="circular_view_report">View environmental report</string>
+    <string name="circular_action_reuse">Reuse</string>
+    <string name="circular_action_repair">Repair or refurbish</string>
+    <string name="circular_action_donate">Donate or repurpose</string>
+    <string name="circular_action_recycle">Recycle</string>
+    <string name="circular_action_material_recovery">Recover materials</string>
+    <string name="circular_action_safe_disposal">Safe disposal</string>
+    <string name="common_yes">Yes</string>
+    <string name="common_no">No</string>
+    <string name="common_retry">Try again</string>
+    <string name="circular_report_share_text">%1$s\nSustainable action: %2$s</string>
 
     <!-- Final report -->
     <string name="report_title">Final report</string>
@@ -130,6 +165,10 @@
     <string name="report_share">Share</string>
     <string name="report_ask_ai">Continue with the AI assistant</string>
     <string name="report_saved_toast">Report saved</string>
+    <string name="report_view_on_map">View on map</string>
+    <string name="report_not_found">This report could not be found</string>
+    <string name="report_location_unavailable">Location unavailable</string>
+    <string name="report_status_unknown">Status unavailable</string>
 
     <!-- AI investigation -->
     <string name="investigation_title">Gemini assistant</string>
@@ -155,8 +194,11 @@
     <string name="history_filter_open">In progress</string>
     <string name="history_filter_done">Resolved</string>
     <string name="history_empty">No reports in this category</string>
+    <string name="reports_empty">No reports yet</string>
+    <string name="reports_load_error">Couldn’t load reports</string>
 
     <!-- Severity labels -->
+    <string name="severity_unknown">Unavailable</string>
     <string name="severity_low">Low</string>
     <string name="severity_medium">Medium</string>
     <string name="severity_high">High</string>
@@ -172,10 +214,11 @@
     <string name="incident_vehicles">Off-track vehicles</string>
 
     <!-- Real report titles — singular, per IncidentCategory (map_filter_* are the plural filter-pill versions) -->
+    <string name="report_type_waste">Waste</string>
     <string name="report_type_fire">Fire</string>
     <string name="report_type_logging">Illegal logging</string>
     <string name="report_type_poaching">Illegal hunting</string>
-    <string name="report_type_pollution">Waste</string>
+    <string name="report_type_pollution">Pollution</string>
     <string name="report_type_wildlife">Wildlife incident</string>
     <string name="report_type_plant_disease">Plant disease</string>
     <string name="report_type_other">Other incident</string>
@@ -195,6 +238,9 @@
     <string name="time_just_now">Just now</string>
     <string name="time_ago_minutes">%d minutes ago</string>
     <string name="time_ago_hours">%d hours ago</string>
+    <string name="time_yesterday">Yesterday</string>
+    <string name="time_ago_days">%d days ago</string>
+    <string name="time_unknown">Time unavailable</string>
 
     <!-- Content descriptions (accessibility) -->
     <string name="cd_back">Back</string>
@@ -210,6 +256,7 @@
     <!-- Map -->
     <string name="map_reserve_label">King Salman Reserve</string>
     <string name="map_filter_all">All</string>
+    <string name="map_filter_waste">Waste</string>
     <string name="map_filter_fire">Fires</string>
     <string name="map_filter_logging">Logging</string>
     <string name="map_filter_poaching">Poaching</string>
@@ -219,6 +266,7 @@
     <string name="map_filter_other">Other</string>
     <string name="map_view_report">View Report</string>
     <string name="map_empty_filter">No reports of this type right now</string>
+    <string name="map_empty_waste">No waste reports in this area</string>
     <string name="map_config_missing_title">Map setup incomplete</string>
     <string name="map_config_missing_body">The map service key hasn\'t been configured yet</string>
     <string name="map_error_title">Couldn\'t load the map</string>

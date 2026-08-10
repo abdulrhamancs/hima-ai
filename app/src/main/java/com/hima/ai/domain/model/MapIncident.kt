@@ -15,11 +15,12 @@ enum class IncidentCategory(
     @StringRes val filterLabelRes: Int,
     @StringRes val singularLabelRes: Int,
 ) {
+    WASTE(R.drawable.ic_recycle, R.string.map_filter_waste, R.string.report_type_waste),
     FIRE(R.drawable.ic_category_fire, R.string.map_filter_fire, R.string.report_type_fire),
     LOGGING(R.drawable.ic_category_logging, R.string.map_filter_logging, R.string.report_type_logging),
-    POACHING(R.drawable.ic_category_poaching, R.string.map_filter_poaching, R.string.report_type_poaching),
     POLLUTION(R.drawable.ic_category_pollution, R.string.map_filter_pollution, R.string.report_type_pollution),
     WILDLIFE(R.drawable.ic_category_wildlife, R.string.map_filter_wildlife, R.string.report_type_wildlife),
+    POACHING(R.drawable.ic_category_poaching, R.string.map_filter_poaching, R.string.report_type_poaching),
     PLANT_DISEASE(R.drawable.ic_category_plant_disease, R.string.map_filter_plant_disease, R.string.report_type_plant_disease),
     OTHER(R.drawable.ic_category_other, R.string.map_filter_other, R.string.report_type_other);
 
@@ -30,13 +31,14 @@ enum class IncidentCategory(
          * WILDLIFE category — a marker icon distinguishing "dead" from
          * "injured" isn't worth the visual noise; the report text does that.
          */
-        fun fromBackendType(type: String?): IncidentCategory = when (type?.uppercase()) {
+        fun fromBackendType(type: String?): IncidentCategory = when (type?.trim()?.uppercase()) {
+            "WASTE", "RECYCLABLE_WASTE" -> WASTE
             "FIRE" -> FIRE
-            "ILLEGAL_LOGGING" -> LOGGING
-            "ILLEGAL_HUNTING" -> POACHING
-            "WASTE" -> POLLUTION
+            "ILLEGAL_LOGGING", "LOGGING" -> LOGGING
+            "ILLEGAL_HUNTING", "POACHING" -> POACHING
+            "POLLUTION", "WATER_POLLUTION" -> POLLUTION
             "DEAD_ANIMAL", "INJURED_ANIMAL" -> WILDLIFE
-            "PLANT_DISEASE" -> PLANT_DISEASE
+            "PLANT_DISEASE", "ENVIRONMENTAL_DAMAGE" -> PLANT_DISEASE
             else -> OTHER
         }
     }
