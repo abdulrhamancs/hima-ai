@@ -36,13 +36,14 @@ All versions live in [`gradle/libs.versions.toml`](../gradle/libs.versions.toml)
 
 ## Secrets — never commit them
 
-`local.properties` is git-ignored. Add your Gemini key there when you reach the
-AI phase (it's wired into `BuildConfig.GEMINI_API_KEY`):
+Gemini is called only by the Express backend. Configure `GEMINI_API_KEY` in
+`backend/.env` for local backend development, or in the hosting provider's
+private environment for production. Never add it to Android `local.properties`,
+`BuildConfig`, source code, or any committed file.
 
-```properties
-# local.properties  (do NOT commit)
-GEMINI_API_KEY=your_key_here
-```
+Android's git-ignored `local.properties` contains only its SDK path and client
+configuration such as `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+`BACKEND_BASE_URL`, and `MAPTILER_API_KEY`.
 
 ## Deferred (added in their phases, not yet wired)
 
@@ -50,4 +51,5 @@ GEMINI_API_KEY=your_key_here
   uncomment the `google-services` plugin and Firebase deps (both are already in
   the version catalog and flagged with comments). See
   [`firebase-setup.md`](firebase-setup.md).
-- **Gemini SDK** (Phase 5): added when the AI draft screen is built.
+- **Gemini Android SDK:** not required. The app sends evidence to the existing
+  backend, which performs Gemini analysis server-side.

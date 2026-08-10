@@ -10,7 +10,7 @@ plugins {
     // alias(libs.plugins.google.services)
 }
 
-// Load git-ignored local.properties (holds GEMINI_API_KEY; used from Phase 5).
+// Load git-ignored Android build configuration.
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use { load(it) }
@@ -30,11 +30,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        // Never hardcode a fallback secret here — it would ship in every APK
-        // and sit in git history. Set these in local.properties (gitignored).
-        val geminiKey = localProperties.getProperty("GEMINI_API_KEY", "")
-        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
-
+        // The Supabase publishable/anon key is intended for client apps; data
+        // access remains protected by Supabase Row Level Security.
         val supabaseUrl = localProperties.getProperty("SUPABASE_URL", "")
         val supabaseAnonKey = localProperties.getProperty("SUPABASE_ANON_KEY", "")
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
@@ -42,6 +39,12 @@ android {
 
         val backendBaseUrl = localProperties.getProperty("BACKEND_BASE_URL", "http://10.0.2.2:5000/")
         buildConfigField("String", "BACKEND_BASE_URL", "\"$backendBaseUrl\"")
+
+        // MapTiler — tile/style provider for the MapLibre map (core/map/MapConfig.kt).
+        // Get a key at https://cloud.maptiler.com/account/keys/ and set it in
+        // local.properties; the map screen shows a clean fallback without one.
+        val mapTilerKey = localProperties.getProperty("MAPTILER_API_KEY", "")
+        buildConfigField("String", "MAPTILER_API_KEY", "\"$mapTilerKey\"")
     }
 
     buildTypes {
@@ -118,6 +121,12 @@ dependencies {
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.moshi.kotlin)
     ksp(libs.moshi.codegen)
+
+    // Map rendering — MapLibre renders MapTiler's vector style
+    implementation(libs.maplibre.android.sdk)
+
+    // Location — one-shot "my location" fix for the map
+    implementation(libs.play.services.location)
 
     // Dependency injection
     implementation(libs.hilt.android)

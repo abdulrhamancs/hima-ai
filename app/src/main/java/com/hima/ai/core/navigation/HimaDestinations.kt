@@ -14,6 +14,9 @@ object HimaDestinations {
     const val MAP = "map"
     const val NEW_REPORT = "new_report"
     const val ANALYSIS = "analysis"
+    /** Where a recyclable/reusable-item analysis lands instead of the report
+     *  flow — it's never written to the reports table, so there's no id. */
+    const val RECYCLABLE_RESULT = "recyclable_result"
     const val INVESTIGATION = "investigation"
     const val HISTORY = "history"
     const val MORE = "more"

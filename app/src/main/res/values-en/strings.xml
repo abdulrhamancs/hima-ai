@@ -94,14 +94,23 @@
     <!-- AI analysis -->
     <string name="analysis_title">AI analysis</string>
     <string name="analysis_loading_title">Analyzing the case…</string>
-    <string name="analysis_loading_sub">Reading the photo to identify the violation type and severity level.</string>
+    <string name="analysis_loading_sub">Reading the photo to understand what it shows.</string>
     <string name="analysis_step_vision">Reading the image</string>
     <string name="analysis_step_context">Collecting location and weather data</string>
-    <string name="analysis_step_severity">Estimating severity level</string>
+    <string name="analysis_step_severity">Preparing the result</string>
     <string name="analysis_kind">Issue type</string>
+    <string name="analysis_material">Material</string>
     <string name="analysis_severity">Severity level</string>
+    <string name="analysis_classification">Classification</string>
     <string name="analysis_confidence">Confidence</string>
     <string name="analysis_retry">Try again</string>
+
+    <!-- Recyclable-waste result (circular economy) -->
+    <string name="recyclable_result_title">Recycling result</string>
+    <string name="recyclable_category_label">Category</string>
+    <string name="recyclable_classification_label">Classification</string>
+    <string name="recyclable_reuse_label">Reuse suggestion</string>
+    <string name="recyclable_analyze_another">Analyze another photo</string>
 
     <!-- Final report -->
     <string name="report_title">Final report</string>
@@ -161,6 +170,16 @@
     <string name="incident_waste">Illegal waste dumping</string>
     <string name="incident_poaching">Illegal hunting</string>
     <string name="incident_vehicles">Off-track vehicles</string>
+
+    <!-- Real report titles — singular, per IncidentCategory (map_filter_* are the plural filter-pill versions) -->
+    <string name="report_type_fire">Fire</string>
+    <string name="report_type_logging">Illegal logging</string>
+    <string name="report_type_poaching">Illegal hunting</string>
+    <string name="report_type_pollution">Waste</string>
+    <string name="report_type_wildlife">Wildlife incident</string>
+    <string name="report_type_plant_disease">Plant disease</string>
+    <string name="report_type_other">Other incident</string>
+
     <string name="loc_tuwaiq">Tuwaiq Mountain — Central Region</string>
     <string name="loc_reem">Wadi Al-Reem area</string>
     <string name="loc_tuwaiq_short">Tuwaiq Mountain</string>
@@ -173,6 +192,9 @@
     <string name="time_may9">9 May 2025</string>
     <string name="time_may6_evening">6 May 2025 — 6:45 PM</string>
     <string name="time_may6_noon">6 May 2025 — 2:20 PM</string>
+    <string name="time_just_now">Just now</string>
+    <string name="time_ago_minutes">%d minutes ago</string>
+    <string name="time_ago_hours">%d hours ago</string>
 
     <!-- Content descriptions (accessibility) -->
     <string name="cd_back">Back</string>
@@ -192,8 +214,18 @@
     <string name="map_filter_logging">Logging</string>
     <string name="map_filter_poaching">Poaching</string>
     <string name="map_filter_pollution">Pollution</string>
+    <string name="map_filter_wildlife">Wildlife</string>
+    <string name="map_filter_plant_disease">Plant disease</string>
+    <string name="map_filter_other">Other</string>
     <string name="map_view_report">View Report</string>
     <string name="map_empty_filter">No reports of this type right now</string>
+    <string name="map_config_missing_title">Map setup incomplete</string>
+    <string name="map_config_missing_body">The map service key hasn\'t been configured yet</string>
+    <string name="map_error_title">Couldn\'t load the map</string>
+    <string name="map_error_body">Check your connection and try again</string>
+    <string name="map_retry">Try again</string>
+    <string name="map_reports_error_title">Couldn\'t load reports</string>
+    <string name="map_reports_error_body">Check your connection and try again</string>
 
     <!-- More / Settings -->
     <string name="more_title">More</string>

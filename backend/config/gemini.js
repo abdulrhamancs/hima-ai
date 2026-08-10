@@ -10,6 +10,14 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const chatModel = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
 // موديل مخصص لتحليل الصور (يرجع JSON منظم فقط)
+//
+// نتيجتان ممكنتان يحددهما result_category:
+//  - environmental_incident: حريق/صيد جائر/احتطاب/تلوث خطير — الحقول القديمة
+//    (issue_type, risk_score, risk_level, recommendation) كما هي، بلا تغيير.
+//  - recyclable_waste: عنصر قابل لإعادة التدوير أو إعادة الاستخدام (بلاستيك،
+//    زجاج، معدن، ورق) — حقول جديدة فقط (material_category,
+//    disposal_classification, reuse_suggestion) تدعم اقتصاد دائري بسيط دون
+//    التعامل معه كحادثة بيئية.
 const visionModel = genAI.getGenerativeModel({
   model: "gemini-3.6-flash",
   generationConfig: {
@@ -23,11 +31,16 @@ const visionModel = genAI.getGenerativeModel({
         },
         is_environmental: {
           type: "boolean",
-          description: "هل الصورة مرتبطة بالمجال البيئي أو المحميات الطبيعية؟ يشمل ذلك: حيوانات وكائنات برية، نباتات وأشجار، تربة وصخور وتضاريس، مصادر مياه (أودية وبحيرات)، تلوث ونفايات وتسربات، حرائق ودخان، آثار أو أضرار بيئية، موائل طبيعية، أو أي مشهد له ارتباط واضح بالبيئة أو المحميات الطبيعية. false لو الصورة تظهر بشكل أساسي: شخص فقط، سيارة فقط، مبنى أو غرفة داخلية، جهاز إلكتروني، طعام، ملابس، أو مستند/ورقة بدون أي عنصر بيئي واضح",
+          description: "هل الصورة مرتبطة بالمجال البيئي، أو تُظهر عنصرًا قابلًا لإعادة التدوير/الاستخدام (اقتصاد دائري)؟ يشمل ذلك: حيوانات وكائنات برية، نباتات وأشجار، تربة وصخور وتضاريس، مصادر مياه، تلوث ونفايات وتسربات، حرائق ودخان، آثار أو أضرار بيئية، موائل طبيعية، أو عبوات/مواد قابلة لإعادة التدوير كالبلاستيك والزجاج والمعدن والورق. false لو الصورة تظهر بشكل أساسي: شخص فقط، سيارة فقط، مبنى أو غرفة داخلية بلا نفايات ظاهرة، جهاز إلكتروني يعمل، طعام، ملابس، أو مستند/ورقة بدون أي عنصر بيئي واضح",
+        },
+        result_category: {
+          type: "string",
+          enum: ["environmental_incident", "recyclable_waste"],
+          description: "نوع النتيجة: environmental_incident لحادثة بيئية تحتاج بلاغًا (حريق، صيد جائر، احتطاب، تلوث خطير، ضرر بيئي)، أو recyclable_waste لعنصر يومي قابل لإعادة التدوير أو إعادة الاستخدام (عبوة بلاستيكية، علبة معدنية، زجاجة، كرتون). يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
         },
         issue_type: {
           type: "string",
-          description: "نوع المشكلة البيئية المكتشفة — واحدة من: حريق، احتطاب، صيد جائر، نفايات أو تلوث، آفة نباتية، حيوان مصاب، حيوان نافق، أو حالة بيئية أخرى. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
+          description: "نوع المشكلة البيئية لحالة environmental_incident فقط — واحدة من: حريق، احتطاب، صيد جائر، نفايات أو تلوث، آفة نباتية، حيوان مصاب، حيوان نافق، أو حالة بيئية أخرى. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
         },
         description: {
           type: "string",
@@ -39,7 +52,7 @@ const visionModel = genAI.getGenerativeModel({
         },
         risk_score: {
           type: "number",
-          description: "درجة الخطورة من 0 إلى 100. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
+          description: "درجة الخطورة من 0 إلى 100 (لحالة environmental_incident فقط)",
         },
         risk_level: {
           type: "string",
@@ -52,6 +65,18 @@ const visionModel = genAI.getGenerativeModel({
         recommendation: {
           type: "string",
           description: "الإجراء المستدام المقترح للتعامل مع الحالة. لحالات النفايات والتلوث، فضّل حلول الاقتصاد الدائري (الفرز، إعادة التدوير، إعادة الاستخدام، تقليل الهدر). لحالات الطوارئ (حريق، صيد جائر، حيوان مصاب أو نافق، آفة نباتية)، اذكر الإجراء البيئي المناسب. يُملأ فقط لو is_environmental و is_recognizable كلاهما true",
+        },
+        material_category: {
+          type: "string",
+          description: "نوع المادة (لحالة recyclable_waste فقط) مثل: بلاستيك، زجاج، معدن، ورق وكرتون، عضوي، إلكتروني",
+        },
+        disposal_classification: {
+          type: "string",
+          description: "تصنيف التخلص (لحالة recyclable_waste فقط) مثل: قابل لإعادة التدوير، قابل لإعادة الاستخدام، نفايات خطرة",
+        },
+        reuse_suggestion: {
+          type: "string",
+          description: "اقتراح اختياري لإعادة استخدام إبداعي (لحالة recyclable_waste فقط) — اتركه فارغًا لو لا يوجد اقتراح مناسب لهذا العنصر بعينه",
         },
       },
       required: ["is_recognizable", "is_environmental", "confidence"],

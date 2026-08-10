@@ -20,6 +20,8 @@ interface HimaBackendApi {
     suspend fun analyzeImage(
         @Header("Authorization") bearerToken: String,
         @Part image: MultipartBody.Part,
+        // Accepted by the handler and folded into the Gemini prompt as extra
+        // context; it does not change which fields come back.
         @Part("description") description: RequestBody?,
     ): Response<AnalyzeResponseDto>
 }
@@ -27,18 +29,28 @@ interface HimaBackendApi {
 /**
  * The backend's `/analyze` response, exactly as it defines it — see
  * backend/config/gemini.js's response schema and backend/index.js's handler.
- * `description` here is currently accepted but not read by that handler (its
- * Gemini prompt is fixed server-side), so sending it has no effect yet; it is
- * still sent so nothing needs to change here once the backend does read it.
+ * `ai_result` carries the fields specific to whichever [resultCategory] the
+ * backend decided on — see [AiResultDto].
  */
 @JsonClass(generateAdapter = true)
 data class AnalyzeResponseDto(
     val status: String? = null,
-    @Json(name = "issue_type") val issueType: String? = null,
+    @Json(name = "result_category") val resultCategory: String? = null,
+    @Json(name = "ai_result") val aiResult: AiResultDto? = null,
+    val error: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class AiResultDto(
     val description: String? = null,
-    @Json(name = "risk_score") val riskScore: Double? = null,
-    @Json(name = "risk_level") val riskLevel: String? = null,
     val confidence: Double? = null,
     val recommendation: String? = null,
-    val error: String? = null,
+    // Environmental incident:
+    @Json(name = "issue_type") val issueType: String? = null,
+    @Json(name = "risk_score") val riskScore: Double? = null,
+    @Json(name = "risk_level") val riskLevel: String? = null,
+    // Recyclable waste:
+    @Json(name = "material_category") val materialCategory: String? = null,
+    @Json(name = "disposal_classification") val disposalClassification: String? = null,
+    @Json(name = "reuse_suggestion") val reuseSuggestion: String? = null,
 )

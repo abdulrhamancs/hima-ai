@@ -10,6 +10,11 @@
         android:name="android.hardware.camera.any"
         android:required="false" />
 
+    <!-- Map's "My Location" — one-shot fix on tap, no background/continuous
+         tracking, so no ACCESS_BACKGROUND_LOCATION is needed. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:name=".HimaApplication"
         android:allowBackup="true"

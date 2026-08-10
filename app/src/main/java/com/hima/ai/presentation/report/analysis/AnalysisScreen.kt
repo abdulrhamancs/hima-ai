@@ -43,7 +43,9 @@ import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.Inter
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
+import com.hima.ai.domain.model.AnalysisResultCategory
 import com.hima.ai.domain.model.SceneKind
+import com.hima.ai.domain.model.Severity
 
 /**
  * AI analysis — the evidence photo, a live progress component, and the
@@ -53,7 +55,7 @@ import com.hima.ai.domain.model.SceneKind
 @Composable
 fun AnalysisScreen(
     onBackClick: () -> Unit,
-    onAnalysisComplete: () -> Unit,
+    onAnalysisComplete: (AnalysisResultCategory) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AnalysisViewModel = hiltViewModel(),
 ) {
@@ -61,7 +63,8 @@ fun AnalysisScreen(
     val colors = LocalHimaColors.current
 
     LaunchedEffect(uiState.isComplete) {
-        if (uiState.isComplete) onAnalysisComplete()
+        val category = uiState.result?.category
+        if (uiState.isComplete && category != null) onAnalysisComplete(category)
     }
 
     Column(
@@ -124,12 +127,13 @@ fun AnalysisScreen(
             }
 
             val result = uiState.result
+            val isIncident = result?.category == AnalysisResultCategory.ENVIRONMENTAL_INCIDENT
             AnimatedVisibility(visible = uiState.stepsDone >= 1 && result != null, enter = fadeIn()) {
                 if (result != null) {
                     Column(Modifier.padding(top = 10.dp)) {
                         KeyValueRow(
-                            label = stringResource(R.string.analysis_kind),
-                            value = result.issueType,
+                            label = stringResource(if (isIncident) R.string.analysis_kind else R.string.analysis_material),
+                            value = (if (isIncident) result.issueType else result.materialCategory).orEmpty(),
                         )
                         HimaDivider()
                     }
@@ -138,10 +142,17 @@ fun AnalysisScreen(
             AnimatedVisibility(visible = uiState.stepsDone >= 3 && result != null, enter = fadeIn()) {
                 if (result != null) {
                     Column {
-                        KeyValueRow(
-                            label = stringResource(R.string.analysis_severity),
-                            valueContent = { SeverityBadge(result.riskLevel) },
-                        )
+                        if (isIncident) {
+                            KeyValueRow(
+                                label = stringResource(R.string.analysis_severity),
+                                valueContent = { SeverityBadge(result.riskLevel ?: Severity.LOW) },
+                            )
+                        } else {
+                            KeyValueRow(
+                                label = stringResource(R.string.analysis_classification),
+                                value = result.disposalClassification.orEmpty(),
+                            )
+                        }
                         HimaDivider()
                         Row(
                             modifier = Modifier

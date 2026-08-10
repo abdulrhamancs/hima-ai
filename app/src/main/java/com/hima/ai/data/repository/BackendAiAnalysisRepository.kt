@@ -5,9 +5,11 @@ import android.net.Uri
 import com.hima.ai.core.common.ApiResult
 import com.hima.ai.core.common.AppError
 import com.hima.ai.core.common.safeApiCall
+import com.hima.ai.data.remote.backend.AiResultDto
 import com.hima.ai.data.remote.backend.AnalyzeResponseDto
 import com.hima.ai.data.remote.backend.HimaBackendApi
 import com.hima.ai.domain.model.AiAnalysis
+import com.hima.ai.domain.model.AnalysisResultCategory
 import com.hima.ai.domain.model.Severity
 import com.hima.ai.domain.repository.AiAnalysisRepository
 import com.hima.ai.domain.repository.AuthRepository
@@ -57,6 +59,16 @@ class BackendAiAnalysisRepository @Inject constructor(
         if (status != "success") {
             return ApiResult.Failure(AppError.Rejected(error ?: "The analysis failed."))
         }
+        val result = aiResult
+            ?: return ApiResult.Failure(AppError.Unexpected("The analysis response was missing expected fields."))
+
+        return when (resultCategory) {
+            "recyclable_waste" -> result.toRecyclableWasteOrFailure()
+            else -> result.toEnvironmentalIncidentOrFailure()
+        }
+    }
+
+    private fun AiResultDto.toEnvironmentalIncidentOrFailure(): ApiResult<AiAnalysis> {
         val severity = riskLevel?.let(::parseSeverity)
         if (issueType == null || description == null || riskScore == null || severity == null ||
             confidence == null || recommendation == null
@@ -65,12 +77,32 @@ class BackendAiAnalysisRepository @Inject constructor(
         }
         return ApiResult.Success(
             AiAnalysis(
-                issueType = issueType,
+                category = AnalysisResultCategory.ENVIRONMENTAL_INCIDENT,
                 description = description,
-                riskScore = riskScore.roundToInt(),
-                riskLevel = severity,
                 confidence = confidence.roundToInt(),
                 recommendation = recommendation,
+                issueType = issueType,
+                riskScore = riskScore.roundToInt(),
+                riskLevel = severity,
+            ),
+        )
+    }
+
+    private fun AiResultDto.toRecyclableWasteOrFailure(): ApiResult<AiAnalysis> {
+        if (description == null || confidence == null || recommendation == null ||
+            materialCategory == null || disposalClassification == null
+        ) {
+            return ApiResult.Failure(AppError.Unexpected("The analysis response was missing expected fields."))
+        }
+        return ApiResult.Success(
+            AiAnalysis(
+                category = AnalysisResultCategory.RECYCLABLE_WASTE,
+                description = description,
+                confidence = confidence.roundToInt(),
+                recommendation = recommendation,
+                materialCategory = materialCategory,
+                disposalClassification = disposalClassification,
+                reuseSuggestion = reuseSuggestion,
             ),
         )
     }

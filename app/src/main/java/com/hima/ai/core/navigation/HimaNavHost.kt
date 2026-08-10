@@ -15,6 +15,7 @@ import androidx.navigation.navArgument
 import com.hima.ai.core.designsystem.theme.HimaEasing
 import com.hima.ai.core.designsystem.theme.HimaMotionDuration
 import com.hima.ai.data.mock.CaptureSource
+import com.hima.ai.domain.model.AnalysisResultCategory
 import com.hima.ai.presentation.auth.LoginScreen
 import com.hima.ai.presentation.auth.SignUpScreen
 import com.hima.ai.presentation.history.HistoryScreen
@@ -26,6 +27,7 @@ import com.hima.ai.presentation.report.capture.CaptureScreen
 import com.hima.ai.presentation.report.detail.ReportDetailScreen
 import com.hima.ai.presentation.report.investigation.InvestigationScreen
 import com.hima.ai.presentation.report.newreport.NewReportScreen
+import com.hima.ai.presentation.report.recyclable.RecyclableResultScreen
 import com.hima.ai.presentation.splash.SplashScreen
 
 // One consistent crossfade for every screen change in the app — no slide,
@@ -180,13 +182,35 @@ fun HimaNavHost(
         composable(HimaDestinations.ANALYSIS) { entry ->
             AnalysisScreen(
                 onBackClick = { back(entry) },
-                onAnalysisComplete = {
-                    // Drop the capture + analysis steps so Back from the report
-                    // returns to Home rather than replaying the flow. No id —
-                    // this is the report the flow just produced.
+                onAnalysisComplete = { category ->
+                    // Drop the capture + analysis steps so Back returns to
+                    // Home rather than replaying the flow either way.
                     if (entry.isCurrent()) {
-                        navController.navigate(HimaDestinations.report()) {
+                        val destination = when (category) {
+                            // No id — this is the report the flow just produced.
+                            AnalysisResultCategory.ENVIRONMENTAL_INCIDENT -> HimaDestinations.report()
+                            // Never written to the reports table, so there is
+                            // no report route to send this to.
+                            AnalysisResultCategory.RECYCLABLE_WASTE -> HimaDestinations.RECYCLABLE_RESULT
+                        }
+                        navController.navigate(destination) {
                             popUpTo(HimaDestinations.NEW_REPORT) { inclusive = true }
+                        }
+                    }
+                },
+            )
+        }
+
+        composable(HimaDestinations.RECYCLABLE_RESULT) { entry ->
+            RecyclableResultScreen(
+                onBackClick = { back(entry) },
+                onAnalyzeAnotherClick = {
+                    // Same shape as goTab: collapse back to Home first so
+                    // repeated "analyze another" taps don't grow the stack.
+                    if (entry.isCurrent()) {
+                        navController.navigate(HimaDestinations.NEW_REPORT) {
+                            popUpTo(HimaDestinations.HOME)
+                            launchSingleTop = true
                         }
                     }
                 },

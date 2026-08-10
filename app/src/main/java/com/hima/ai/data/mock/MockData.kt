@@ -1,8 +1,6 @@
 package com.hima.ai.data.mock
 
 import com.hima.ai.R
-import com.hima.ai.domain.model.IncidentCategory
-import com.hima.ai.domain.model.MapIncident
 import com.hima.ai.domain.model.ReportStatus
 import com.hima.ai.domain.model.ReportSummary
 import com.hima.ai.domain.model.SceneKind
@@ -87,118 +85,14 @@ object MockData {
     val resolvedReports: Int get() = allReports.count { it.status == ReportStatus.RESOLVED }
     val criticalAlerts: Int get() = allReports.count { it.severity == Severity.CRITICAL }
 
-    /** Markers for the reserve map. Positions are fractions (0..1) of the map canvas. */
-    val mapIncidents = listOf(
-        MapIncident(
-            report = ReportSummary(
-                id = "m1",
-                titleRes = R.string.incident_fire,
-                locationRes = R.string.loc_tuwaiq_short,
-                timeRes = R.string.time_3hours,
-                severity = Severity.CRITICAL,
-                status = ReportStatus.OPEN,
-                scene = SceneKind.FIRE,
-            ),
-            category = IncidentCategory.FIRE,
-            xFraction = 0.62f,
-            yFraction = 0.30f,
-        ),
-        MapIncident(
-            report = ReportSummary(
-                id = "m2",
-                titleRes = R.string.incident_logging,
-                locationRes = R.string.loc_tuwaiq,
-                timeRes = R.string.time_10min,
-                severity = Severity.HIGH,
-                status = ReportStatus.OPEN,
-                scene = SceneKind.STUMP,
-            ),
-            category = IncidentCategory.LOGGING,
-            xFraction = 0.34f,
-            yFraction = 0.42f,
-        ),
-        MapIncident(
-            report = ReportSummary(
-                id = "m3",
-                titleRes = R.string.incident_firewood,
-                locationRes = R.string.loc_reem,
-                timeRes = R.string.time_1hour,
-                severity = Severity.MEDIUM,
-                status = ReportStatus.OPEN,
-                scene = SceneKind.FOREST,
-            ),
-            category = IncidentCategory.LOGGING,
-            xFraction = 0.71f,
-            yFraction = 0.58f,
-        ),
-        MapIncident(
-            report = ReportSummary(
-                id = "m4",
-                titleRes = R.string.incident_poaching,
-                locationRes = R.string.loc_north,
-                timeRes = R.string.time_may9,
-                severity = Severity.HIGH,
-                status = ReportStatus.OPEN,
-                scene = SceneKind.VALLEY,
-            ),
-            category = IncidentCategory.POACHING,
-            xFraction = 0.22f,
-            yFraction = 0.68f,
-        ),
-        MapIncident(
-            report = ReportSummary(
-                id = "m5",
-                titleRes = R.string.incident_water,
-                locationRes = R.string.loc_takhyeel,
-                timeRes = R.string.time_may6_noon,
-                severity = Severity.LOW,
-                status = ReportStatus.RESOLVED,
-                scene = SceneKind.WATER,
-            ),
-            category = IncidentCategory.POLLUTION,
-            xFraction = 0.50f,
-            yFraction = 0.76f,
-        ),
-        MapIncident(
-            report = ReportSummary(
-                id = "m6",
-                titleRes = R.string.incident_poaching,
-                locationRes = R.string.loc_reem,
-                timeRes = R.string.time_may9,
-                severity = Severity.MEDIUM,
-                status = ReportStatus.RESOLVED,
-                scene = SceneKind.VALLEY,
-            ),
-            category = IncidentCategory.POACHING,
-            xFraction = 0.80f,
-            yFraction = 0.24f,
-        ),
-        // Deliberately close to m6, so the two merge into a cluster at rest
-        // and split apart on zoom — a visible demo of the clustering behaviour.
-        MapIncident(
-            report = ReportSummary(
-                id = "m7",
-                titleRes = R.string.incident_firewood,
-                locationRes = R.string.loc_reem,
-                timeRes = R.string.time_may9,
-                severity = Severity.HIGH,
-                status = ReportStatus.OPEN,
-                scene = SceneKind.FOREST,
-            ),
-            category = IncidentCategory.LOGGING,
-            xFraction = 0.76f,
-            yFraction = 0.20f,
-        ),
-    )
-
     /**
-     * Resolves a report id coming from a list row or map marker. Ids are unique
-     * across the three sets, so a single lookup covers Home, History, and the
-     * map. Returns null for an unknown id — callers fall back to the freshly
-     * analysed report rather than crashing.
+     * Resolves a report id coming from a list row. Real map markers instead
+     * resolve through [com.hima.ai.domain.repository.ReportsRepository.findById] —
+     * see [com.hima.ai.presentation.report.detail.ReportDetailViewModel]. Returns
+     * null for an unknown id — callers fall back to the freshly analysed
+     * report rather than crashing.
      */
     fun findReport(id: String): ReportSummary? =
         recentReports.firstOrNull { it.id == id }
             ?: allReports.firstOrNull { it.id == id }
-            ?: mapIncidents.firstOrNull { it.report.id == id }?.report
 }

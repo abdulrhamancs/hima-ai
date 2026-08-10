@@ -11,14 +11,15 @@ import org.junit.Test
 /**
  * Guards the prototype's data against the inconsistencies that made report
  * rows resolve to the wrong record: Home and History must describe the same
- * reports, ids must be unique, and every id a screen can hand to navigation
- * must resolve back to a report.
+ * reports, ids must be unique, and every mock id a list screen can hand to
+ * navigation must resolve back to a report. Map incidents are now real
+ * Supabase data and are covered at the repository/clustering boundary.
  */
 class MockDataConsistencyTest {
 
     @Test
     fun `report ids are unique across every source`() {
-        val ids = MockData.allReports.map { it.id } + MockData.mapIncidents.map { it.report.id }
+        val ids = MockData.allReports.map { it.id }
         assertEquals("duplicate report ids would make lookups ambiguous", ids.size, ids.toSet().size)
     }
 
@@ -34,8 +35,7 @@ class MockDataConsistencyTest {
     @Test
     fun `every id reachable from a list row or marker resolves`() {
         val reachable = MockData.recentReports.map { it.id } +
-            MockData.allReports.map { it.id } +
-            MockData.mapIncidents.map { it.report.id }
+            MockData.allReports.map { it.id }
 
         reachable.forEach { id ->
             assertNotNull("tapping the row for id=$id must open a report", MockData.findReport(id))
@@ -73,17 +73,4 @@ class MockDataConsistencyTest {
         assertEquals(MockData.totalReports, MockData.openReports + MockData.resolvedReports)
     }
 
-    @Test
-    fun `map markers sit inside the map canvas`() {
-        MockData.mapIncidents.forEach { incident ->
-            assertTrue(
-                "marker ${incident.report.id} is off-canvas at x=${incident.xFraction}",
-                incident.xFraction in 0f..1f,
-            )
-            assertTrue(
-                "marker ${incident.report.id} is off-canvas at y=${incident.yFraction}",
-                incident.yFraction in 0f..1f,
-            )
-        }
-    }
 }
