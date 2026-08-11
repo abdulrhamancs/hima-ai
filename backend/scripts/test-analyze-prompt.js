@@ -1,16 +1,4 @@
-// Runs every image in ./images through the live /analyze endpoint and prints
-// a results table — a quick way to check prompt/schema changes against a
-// batch of real photos instead of one curl at a time.
-//
-// Usage:
-//   1. Drop test images into scripts/images/ (gitignored — not committed)
-//      Filename convention: "<expected_label>__anything.jpg", e.g.
-//      "fire__hillside.jpg", "recyclable__can.jpg", "reject__random.jpg"
-//      (the part before "__" is just for your own reference in the table)
-//   2. node scripts/test-analyze-prompt.js <base_url> <access_token>
-//
-// Note: every successful environmental_incident or recyclable_waste result
-// is a real save to the reports table, exactly like a user hitting /analyze.
+
 const fs = require("fs");
 const path = require("path");
 
