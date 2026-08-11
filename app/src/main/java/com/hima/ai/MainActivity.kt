@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
@@ -53,6 +54,14 @@ class MainActivity : AppCompatActivity() {
         val background = if (darkTheme) DarkBg else Bg
         window.statusBarColor = background.toArgb()
         window.navigationBarColor = background.toArgb()
+        // The window background is what shows through mid-crossfade, while the
+        // outgoing and incoming screens are both partly transparent. It comes
+        // from android:windowBackground, which resource qualifiers resolve
+        // against the *system* dark mode — so an in-app theme override that
+        // disagrees with the system (dark app on a light phone) left a light
+        // window flashing behind every transition. Keep it in step with the
+        // theme actually being drawn rather than the one the system assumes.
+        window.setBackgroundDrawable(background.toArgb().toDrawable())
     }
 
 }
