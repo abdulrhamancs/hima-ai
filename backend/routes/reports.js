@@ -15,7 +15,7 @@ const EXT_BY_MIME = {
   "image/gif": "gif",
 };
 
-// POST /reports — image + description + location -> Gemini -> structured result -> saved report
+
 router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
@@ -110,7 +110,7 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   }
 });
 
-// GET /reports/map — lightweight markers for the map view
+
 router.get("/map", authMiddleware, async (req, res) => {
   try {
     const { status, type } = req.query;
@@ -137,7 +137,7 @@ router.get("/map", authMiddleware, async (req, res) => {
   }
 });
 
-// GET /reports — full history (own or all, with pagination)
+
 router.get("/", authMiddleware, async (req, res) => {
   try {
     const { mine, status, type } = req.query;
@@ -174,7 +174,7 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-// GET /reports/stats — current user's reported/resolved counts (for Profile screen)
+
 router.get("/stats", authMiddleware, async (req, res) => {
   try {
     const userClient = createUserClient(req.token);
@@ -202,7 +202,7 @@ router.get("/stats", authMiddleware, async (req, res) => {
   }
 });
 
-// GET /reports/:id — single report detail
+
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const userClient = createUserClient(req.token);
