@@ -1,19 +1,22 @@
 package com.hima.ai.core.designsystem.component
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -65,8 +68,13 @@ fun severityColors(severity: Severity, darkTheme: Boolean = false): SeverityColo
 }
 
 /**
- * A labelled severity pill — the app's only use of colour to encode meaning.
- * Tinted rather than saturated so it stays readable outdoors without shouting.
+ * A labelled severity pill. Tinted rather than saturated so it stays readable
+ * outdoors without shouting.
+ *
+ * The leading glyph changes shape as well as colour — circle, square, triangle,
+ * diamond as severity climbs — so the level survives being seen by a colourblind
+ * ranger, printed in mono, or glanced at in bright sun. Colour alone never
+ * carries the meaning.
  */
 @Composable
 fun SeverityBadge(severity: Severity, modifier: Modifier = Modifier) {
@@ -80,16 +88,39 @@ fun SeverityBadge(severity: Severity, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Box(
-            Modifier
-                .size(6.dp)
-                .clip(CircleShape)
-                .background(colors.foreground),
-        )
+        Canvas(Modifier.size(7.dp)) { drawSeverityGlyph(severity, colors.foreground) }
         Text(
             text = stringResource(severity.labelRes),
             style = HimaTextStyles.m.copy(fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold),
             color = colors.foreground,
+        )
+    }
+}
+
+/** Severity encoded as shape, so it reads without relying on hue. */
+private fun DrawScope.drawSeverityGlyph(severity: Severity, tint: Color) {
+    val s = size.minDimension
+    when (severity) {
+        Severity.UNKNOWN, Severity.LOW -> drawCircle(tint, radius = s / 2f)
+        Severity.MEDIUM -> drawRect(tint, topLeft = Offset.Zero, size = Size(s, s))
+        Severity.HIGH -> drawPath(
+            Path().apply {
+                moveTo(s / 2f, 0f)
+                lineTo(s, s)
+                lineTo(0f, s)
+                close()
+            },
+            tint,
+        )
+        Severity.CRITICAL -> drawPath(
+            Path().apply {
+                moveTo(s / 2f, 0f)
+                lineTo(s, s / 2f)
+                lineTo(s / 2f, s)
+                lineTo(0f, s / 2f)
+                close()
+            },
+            tint,
         )
     }
 }

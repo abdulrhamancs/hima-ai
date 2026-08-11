@@ -1,5 +1,6 @@
 package com.hima.ai.core.map
 
+import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +42,15 @@ fun HimaMapView(
 
     val mapView = remember {
         MapLibre.getInstance(context)
-        MapView(context)
+        MapView(context).apply {
+            // MapLibre's projection speaks raw LTR screen pixels, and the
+            // marker overlay on top of it is positioned in that same space.
+            // Compose's AndroidView already forwards an LTR LocalLayoutDirection
+            // here today, so this is belt-and-braces — but it pins the
+            // invariant to the map surface itself rather than leaving it
+            // dependent on how the caller happens to nest its providers.
+            layoutDirection = View.LAYOUT_DIRECTION_LTR
+        }
     }
 
     DisposableEffect(lifecycleOwner, mapView) {

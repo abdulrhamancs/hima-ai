@@ -51,7 +51,10 @@ import com.hima.ai.core.designsystem.component.StatsRow
 import com.hima.ai.core.designsystem.component.StatusIndicator
 import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
+import com.hima.ai.core.designsystem.component.ImpactDonut
+import com.hima.ai.core.designsystem.component.ImpactSegment
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
+import com.hima.ai.core.util.rememberTimeOfDayGreeting
 import com.hima.ai.domain.model.ReportSummary
 import com.hima.ai.domain.repository.ReportsLoadState
 import kotlin.math.roundToInt
@@ -107,34 +110,34 @@ fun HomeScreen(
 
             item {
                 StatusIndicator(
-                    label = stringResource(R.string.home_reserve_status),
+                    label = stringResource(R.string.home_environmental_status),
                     value = stringResource(
                         when {
-                            !hasReportData -> R.string.home_reserve_status_unknown
-                            uiState.criticalAlerts > 0 -> R.string.home_reserve_status_attention
-                            else -> R.string.home_reserve_status_value
+                            !hasReportData -> R.string.home_environmental_status_unknown
+                            uiState.criticalAlerts > 0 -> R.string.home_environmental_status_attention
+                            else -> R.string.home_environmental_status_value
                         },
                     ),
                     note = when {
-                        !hasReportData -> stringResource(R.string.home_reserve_status_loading)
+                        !hasReportData -> stringResource(R.string.home_environmental_status_loading)
                         uiState.criticalAlerts > 0 -> stringResource(
-                            R.string.home_reserve_status_critical_note,
+                            R.string.home_environmental_status_critical_note,
                             uiState.criticalAlerts,
                         )
-                        else -> stringResource(R.string.home_reserve_status_note)
+                        else -> stringResource(R.string.home_environmental_status_note)
                     },
                     location = monitoredLocation,
                     resolvedPercentage = resolvedPercentage,
                     resolvedPercentageLabel = resolvedPercentage?.let {
                         stringResource(R.string.home_resolved_percentage, it)
-                    } ?: stringResource(R.string.home_reserve_status_unknown),
+                    } ?: stringResource(R.string.home_environmental_status_unknown),
                     resolvedLabel = stringResource(R.string.home_resolved_percentage_label),
                     modifier = Modifier.padding(top = 18.dp),
                 )
             }
 
             item {
-                val unavailable = stringResource(R.string.home_reserve_status_unknown)
+                val unavailable = stringResource(R.string.home_environmental_status_unknown)
                 StatsRow(
                     items = listOf(
                         (if (hasReportData) uiState.totalReports.toString() else unavailable) to stringResource(R.string.home_stat_total),
@@ -150,8 +153,30 @@ fun HomeScreen(
                     ),
                     emphasisIndex = 3,
                     emphasisColor = colors.severityCritical,
+                    // Only count up once there are real figures to count to —
+                    // before that the tiles show an em-dash, which has no number.
+                    animatedValues = if (hasReportData) {
+                        listOf(
+                            uiState.totalReports,
+                            uiState.openReports,
+                            uiState.resolvedReports,
+                            uiState.criticalAlerts,
+                        )
+                    } else {
+                        emptyList()
+                    },
                     modifier = Modifier.padding(top = 16.dp),
                 )
+            }
+
+            if (hasReportData && uiState.totalReports > 0) {
+                item {
+                    ImpactBreakdownCard(
+                        resolved = uiState.resolvedReports,
+                        inProgress = uiState.openReports,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
             }
 
             item {
@@ -271,7 +296,7 @@ private fun HomeHeader(
         }
         Column(Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.home_greeting),
+                text = stringResource(rememberTimeOfDayGreeting()),
                 style = HimaTextStyles.h2,
                 color = colors.ink,
             )
@@ -289,6 +314,54 @@ private fun HomeHeader(
             onClick = onNotificationsClick,
             filled = true,
             badged = true,
+        )
+    }
+}
+
+/**
+ * The report mix as a chart rather than four bare figures — the "what has this
+ * actually added up to" read of the same data the tiles above show.
+ *
+ * Broken down by status rather than by incident type: HomeViewModel exposes
+ * status counts, and deriving per-category counts would mean changing the
+ * ViewModel, which this pass deliberately leaves alone. [ImpactDonut] itself is
+ * generic, so swapping in category counts later is a one-line change here.
+ */
+@Composable
+private fun ImpactBreakdownCard(
+    resolved: Int,
+    inProgress: Int,
+    modifier: Modifier = Modifier,
+) {
+    val colors = LocalHimaColors.current
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = if (colors.isDark) 1.dp else 6.dp,
+                shape = RoundedCornerShape(HimaRadius.card),
+                clip = false,
+            )
+            .clip(RoundedCornerShape(HimaRadius.card))
+            .background(colors.surface)
+            .padding(18.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.home_impact_title),
+            style = HimaTextStyles.t,
+            color = colors.ink,
+        )
+        ImpactDonut(
+            // Status only, and deliberately just these two: they partition the
+            // report set exactly, so the centre total matches the "total
+            // reports" tile above. Critical is a *severity*, orthogonal to
+            // status — folding it in here would count those reports twice and
+            // the ring would overshoot the real total.
+            segments = listOf(
+                ImpactSegment(stringResource(R.string.home_stat_done), resolved, colors.green),
+                ImpactSegment(stringResource(R.string.home_stat_open), inProgress, colors.severityMid),
+            ),
+            modifier = Modifier.padding(top = 14.dp),
         )
     }
 }

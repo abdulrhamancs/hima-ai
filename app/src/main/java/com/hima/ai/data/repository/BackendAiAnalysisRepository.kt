@@ -9,6 +9,7 @@ import com.hima.ai.R
 import com.hima.ai.core.common.ApiResult
 import com.hima.ai.core.common.AppError
 import com.hima.ai.core.common.safeApiCall
+import com.hima.ai.data.mock.ReportDraft
 import com.hima.ai.data.remote.backend.AiResultDto
 import com.hima.ai.data.remote.backend.AnalyzeResponseDto
 import com.hima.ai.data.remote.backend.HimaBackendApi
@@ -42,6 +43,7 @@ class BackendAiAnalysisRepository @Inject constructor(
     private val api: HimaBackendApi,
     private val authRepository: AuthRepository,
     private val reportsRepository: ReportsRepository,
+    private val draft: ReportDraft,
     private val moshi: Moshi,
 ) : AiAnalysisRepository {
 
@@ -49,11 +51,26 @@ class BackendAiAnalysisRepository @Inject constructor(
         val token = authRepository.currentSession.value?.accessToken
             ?: return ApiResult.Failure(AppError.Rejected("Sign in before analysing a report."))
 
-        if (!context.hasLocationPermission()) {
-            return ApiResult.Failure(AppError.Rejected(context.getString(R.string.analysis_location_required)))
+        // A hand-picked location replaces the GPS fix for this one report, and
+        // skips the permission/fix requirements with it — the whole point is to
+        // be able to file a report for somewhere the device isn't. Nothing here
+        // changes the app's permission state; with no override set (the
+        // default) this is exactly the original path.
+        val manual = draft.manualLocation.value
+        val latitude: Double
+        val longitude: Double
+        if (manual != null) {
+            latitude = manual.latitude
+            longitude = manual.longitude
+        } else {
+            if (!context.hasLocationPermission()) {
+                return ApiResult.Failure(AppError.Rejected(context.getString(R.string.analysis_location_required)))
+            }
+            val location = LocationServices.getFusedLocationProviderClient(context).awaitCurrentLocation()
+                ?: return ApiResult.Failure(AppError.Rejected(context.getString(R.string.analysis_location_unavailable)))
+            latitude = location.latitude
+            longitude = location.longitude
         }
-        val location = LocationServices.getFusedLocationProviderClient(context).awaitCurrentLocation()
-            ?: return ApiResult.Failure(AppError.Rejected(context.getString(R.string.analysis_location_unavailable)))
 
         val imagePart = withContext(Dispatchers.IO) {
             runCatching { imageUri.toMultipartPart(context) }
@@ -65,12 +82,12 @@ class BackendAiAnalysisRepository @Inject constructor(
             ?.toRequestBody("text/plain".toMediaTypeOrNull())
         val languagePart = currentAppLanguage().tag
             .toRequestBody("text/plain".toMediaTypeOrNull())
-        val latitudePart = location.latitude.toString()
+        val latitudePart = latitude.toString()
             .toRequestBody("text/plain".toMediaTypeOrNull())
-        val longitudePart = location.longitude.toString()
+        val longitudePart = longitude.toString()
             .toRequestBody("text/plain".toMediaTypeOrNull())
 
-        val result = moshi.safeApiCall(::parseAnalyzeError) {
+        val result = moshi.safeApiCall(::parseAnalyzeError, label = "analyze/gemini") {
             api.analyzeImage(
                 "Bearer $token",
                 imagePart,

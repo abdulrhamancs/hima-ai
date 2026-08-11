@@ -3,6 +3,7 @@ package com.hima.ai.presentation.report.newreport
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hima.ai.data.mock.ManualLocation
 import com.hima.ai.data.mock.PrototypeSession
 import com.hima.ai.data.mock.ReportDraft
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.stateIn
 data class NewReportUiState(
     val imageUri: Uri? = null,
     val description: String = "",
+    /** Non-null when the ranger has picked a location by hand for this report. */
+    val manualLocation: ManualLocation? = null,
 ) {
     /** The analyse action stays disabled until there is something to analyse. */
     val canAnalyze: Boolean get() = imageUri != null
@@ -33,8 +36,8 @@ class NewReportViewModel @Inject constructor(
 ) : ViewModel() {
 
     val uiState: StateFlow<NewReportUiState> =
-        combine(draft.imageUri, draft.description) { uri, description ->
-            NewReportUiState(imageUri = uri, description = description)
+        combine(draft.imageUri, draft.description, draft.manualLocation) { uri, description, manual ->
+            NewReportUiState(imageUri = uri, description = description, manualLocation = manual)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -53,5 +56,10 @@ class NewReportViewModel @Inject constructor(
 
     fun onDescriptionChange(value: String) {
         draft.setDescription(value)
+    }
+
+    /** Pass null to fall back to the device's real GPS fix. */
+    fun onManualLocationChange(location: ManualLocation?) {
+        draft.setManualLocation(location)
     }
 }

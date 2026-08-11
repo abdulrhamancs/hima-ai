@@ -57,7 +57,7 @@ class BackendFireHotspotsRepository @Inject constructor(
 
         _loadState.value = FireLoadState.Loading
         when (
-            val result = moshi.safeApiCall(::parseError) {
+            val result = moshi.safeApiCall(::parseError, label = "fires/firms") {
                 backendApi.getFires("Bearer $token", days = REQUEST_WINDOW_DAYS)
             }
         ) {

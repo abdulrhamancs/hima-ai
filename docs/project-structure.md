@@ -5,9 +5,10 @@ exists. The layout follows an **MVVM + lightweight Clean Architecture** approach
 with a **layer-first, feature-within** package organization so the codebase
 scales cleanly as screens are added.
 
-> No application code, Gradle files, or manifests exist yet. This is the
-> scaffold only. Package folders are preserved with `.gitkeep` placeholders and
-> will be filled in screen-by-screen.
+> This reflects the current state of the repo: a working Android app plus a
+> local Node/Express backend. It's still evolving screen-by-screen, but the
+> core report → AI analysis → result flow, auth, and the reserve map are all
+> implemented and wired to real services (Supabase + Gemini).
 
 ---
 
@@ -16,10 +17,13 @@ scales cleanly as screens are added.
 ```
 Hima-AI/
 ├── AGENTS.md      # Working agreement + product/coding/UX standards (source of truth for how we build)
-├── README.md      # Project intro, stack, MVP scope, docs index
+├── README.md      # Project intro, stack, feature list, docs index
 ├── docs/          # Engineering documentation
 ├── design/        # Approved designs — the visual source of truth
-└── app/           # The Android application module
+├── app/           # The Android application module
+├── backend/       # Node/Express server — Gemini analysis, Supabase persistence, NASA FIRMS proxy
+├── supabase/      # Supabase-side SQL (demo seed data)
+└── run-demo.sh    # Starts the backend, then builds/installs/launches the app
 ```
 
 | Folder     | Purpose |
@@ -27,6 +31,8 @@ Hima-AI/
 | `docs/`    | All written engineering documentation: architecture, setup, integrations, standards. Keeps knowledge out of chat and in the repo. |
 | `design/`  | Exported screen mockups, components, and design tokens. Per AGENTS.md these are the **source of truth** — UI must match them. |
 | `app/`     | The Android app module. Holds the Kotlin package tree, resources, and tests. |
+| `backend/` | The Node/Express server the app talks to. Holds the Gemini API key server-side, uploads evidence photos to Supabase Storage, inserts reports into Supabase (RLS-scoped to the caller), and proxies NASA FIRMS fire data and protected-area boundaries. |
+| `supabase/`| SQL that runs against the Supabase project directly (e.g. demo seed data), separate from anything the backend does at request time. |
 
 ---
 
@@ -88,7 +94,9 @@ app/src/
 | Folder                       | Purpose |
 | ---------------------------- | ------- |
 | `res/drawable/`              | Vector/bitmap drawables and shapes. |
-| `res/values/`               | `strings.xml`, `colors.xml`, `themes.xml`, dimensions — no hardcoded strings/colors in code. |
+| `res/values/`               | `strings.xml` (Arabic, the app's default/primary language), `colors.xml`, `themes.xml`, dimensions — no hardcoded strings/colors in code. |
+| `res/values-en/`             | English string overrides. Keys must stay in parity with `res/values/`. |
+| `res/values-night/`          | Dark-theme color overrides. |
 | `res/font/`                 | Bundled font families for the type scale. |
 | `res/mipmap-anydpi-v26/`    | Adaptive launcher-icon definitions. |
 
@@ -100,7 +108,7 @@ Base package: **`com.hima.ai`** (`hima` = protected reserve; fitting the domain)
 
 The tree is organized **by architectural layer first**, with UI split **by
 feature**. Dependencies point inward only: `presentation → domain ← data`. The
-`domain` layer knows nothing about Compose, Firebase, or Gemini.
+`domain` layer knows nothing about Compose, Supabase, or Gemini.
 
 ```
 com/hima/ai/
@@ -108,51 +116,59 @@ com/hima/ai/
 │   ├── common/         # Result/Resource wrappers, constants, shared extensions
 │   ├── designsystem/   # The Compose implementation of the design system
 │   │   ├── theme/          # Color, Typography, Shape, HimaTheme
-│   │   ├── component/      # Reusable composables (buttons, cards, chips, bars)
-│   │   └── icon/           # Central icon references
+│   │   └── component/      # Reusable composables (buttons, cards, chips, bars)
+│   ├── location/       # One-shot "my location" fix + Saudi place lookups
+│   ├── map/            # MapLibre/MapTiler config for the reserve map
 │   ├── navigation/     # NavHost, routes/destinations, nav args
 │   └── util/           # Formatters, date/location helpers, misc utilities
 │
 ├── data/           # How data is fetched and stored (the "how")
-│   ├── remote/         # Remote data sources
-│   │   ├── firebase/       # Auth, Firestore, Storage access
-│   │   └── gemini/         # Gemini API client and request/response models
+│   ├── remote/         # Remote data sources (Retrofit APIs)
+│   │   ├── backend/        # Hima's own Node/Express backend (/analyze, /fires, …)
+│   │   └── supabase/       # Supabase Auth + REST APIs, called directly from the app
 │   ├── repository/     # Repository IMPLEMENTATIONS of domain interfaces
-│   ├── model/          # DTOs / serialization models for remote data
-│   └── mapper/         # DTO ⇄ domain-model converters
+│   │                   # (SupabaseAuthRepository, SupabaseReportsRepository,
+│   │                   #  BackendAiAnalysisRepository, BackendFireHotspotsRepository)
+│   └── mock/           # Prototype/demo-only state (see below)
 │
 ├── domain/         # Business rules — pure Kotlin, no Android/framework deps
-│   ├── model/          # Core entities (Report, Incident, User, AiAnalysis…)
-│   ├── repository/     # Repository INTERFACES (contracts the data layer fulfills)
-│   └── usecase/        # Single-purpose business actions (SubmitReport, AnalyzeImage…)
+│   ├── model/          # Core entities (Report, AiAnalysis, FireHotspot, User, Severity…)
+│   └── repository/     # Repository INTERFACES (contracts the data layer fulfills)
 │
-├── presentation/   # UI layer, one package per approved screen (MVVM)
+├── presentation/   # UI layer, one package per screen (MVVM)
 │   ├── splash/         # Splash / Welcome
 │   ├── auth/           # Login + Sign up
 │   ├── home/           # Home
-│   ├── map/            # Reserve map (pan/zoom, incident markers, bottom sheet)
+│   ├── map/            # Reserve map (pan/zoom, incident markers, NASA FIRMS fire layer,
+│   │                   #  protected-area boundaries, manual location override)
 │   ├── report/         # The report lifecycle:
-│   │   ├── newreport/      #   New report (attach photo, location, note)
-│   │   ├── analysis/       #   AI analysis (processing + findings)
-│   │   ├── detail/         #   Final report (structured output)
-│   │   └── investigation/  #   AI investigation (follow-up Q&A)
-│   └── history/        # Reports history
+│   │   ├── newreport/      #   New report (attach photo, description, location)
+│   │   ├── capture/        #   Camera / gallery capture
+│   │   ├── analysis/       #   AI analysis (scanning, staged reveal, impact chart)
+│   │   ├── recyclable/     #   Circular-economy result (recyclable-waste path)
+│   │   ├── investigation/  #   AI investigation (follow-up Q&A)
+│   │   └── detail/         #   Final report (structured output)
+│   ├── history/        # Reports history
+│   └── more/           # More/Settings menu (contact, FAQ, privacy, terms, rate app)
 │
-└── di/             # Dependency-injection modules (wiring the layers together)
+└── di/             # Hilt modules (NetworkModule, RepositoryModule)
 ```
 
-Prototype content lives in `data/mock/` — `MockData` (static reports and
-counters) and `PrototypeSession` (in-memory state shared across the flow, so
-an investigation answer visibly updates the final report). Both are the only
-places fake data exists; replacing them with a repository is the backend step.
+Prototype/demo-only state lives in `data/mock/` — `MockData` (fallback
+content), `ReportDraft` (the report currently being composed, including any
+manual location override), and `PrototypeSession` (in-memory state shared
+across the flow, so an investigation answer visibly updates the final
+report). Everything else in `data/` talks to a real backend: Supabase
+directly for auth and report reads, or the Node backend for AI analysis and
+fire data.
 
 ### Layer-by-layer
 
 | Package         | Responsibility | Depends on |
 | --------------- | -------------- | ---------- |
-| `core`          | Foundation reused everywhere: design system, navigation, shared utils. | — |
+| `core`          | Foundation reused everywhere: design system, navigation, map/location config, shared utils. | — |
 | `domain`        | The business model and rules. Pure Kotlin, framework-free, most stable. | nothing |
-| `data`          | Implements `domain` repository contracts using Firebase and Gemini. | `domain` |
+| `data`          | Implements `domain` repository contracts using Supabase and the Node backend. | `domain` |
 | `presentation`  | Compose screens + ViewModels. Each feature holds its screen, ViewModel, and UI state. | `domain`, `core` |
 | `di`            | Provides/binds implementations (e.g. Hilt modules) so layers stay decoupled. | all |
 
@@ -161,9 +177,9 @@ places fake data exists; replacing them with a repository is the backend step.
 - **Scales by feature** — a new screen is a new package under `presentation/`,
   with matching use cases in `domain/` and no impact on existing features.
 - **Testable** — `domain` and ViewModels are plain Kotlin, unit-testable without
-  an emulator; Firebase/Gemini sit behind repository interfaces and are mockable.
+  an emulator; Supabase/the backend sit behind repository interfaces and are mockable.
 - **Swap-friendly** — the AI provider or database can change by editing only
-  `data/`, because `domain` depends on interfaces, not on Gemini or Firestore.
+  `data/`, because `domain` depends on interfaces, not on Gemini or Supabase directly.
 - **Matches AGENTS.md** — enforces MVVM, reusable composables, state hoisting,
   and "no hardcoded strings/colors" (those live in `res/values/`).
 
