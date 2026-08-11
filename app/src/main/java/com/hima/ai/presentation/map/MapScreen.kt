@@ -4,8 +4,12 @@ import android.Manifest
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -50,10 +55,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.location.LocationServices
@@ -233,11 +241,22 @@ fun MapScreen(
             latestRegroupIncidents.value(currentMap)
             viewModel.onCameraMoved(currentMap.cameraPosition)
         }
+        // Tapping bare map closes an open report card. MapLibre reports this
+        // only for a tap, so panning and zooming are unaffected, and markers
+        // are Compose overlays that consume their own taps before the map sees
+        // them. Dismiss only — never navigate: the scrim this card replaced
+        // conflated the two, which turned a stray tap into leaving the screen.
+        val mapClickListener = MapLibreMap.OnMapClickListener {
+            viewModel.onDismissSheet()
+            false
+        }
         currentMap.addOnCameraMoveListener(moveListener)
         currentMap.addOnCameraIdleListener(idleListener)
+        currentMap.addOnMapClickListener(mapClickListener)
         onDispose {
             currentMap.removeOnCameraMoveListener(moveListener)
             currentMap.removeOnCameraIdleListener(idleListener)
+            currentMap.removeOnMapClickListener(mapClickListener)
         }
     }
 
@@ -489,6 +508,7 @@ fun MapScreen(
                         viewModel.onDismissSheet()
                         onViewReportClick(incident.report.id)
                     },
+                    onDismiss = viewModel::onDismissSheet,
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
@@ -522,6 +542,12 @@ fun MapScreen(
 
 private const val REPORT_FOCUS_ZOOM = 15.0
 private const val REPORT_FOCUS_DURATION_MS = 700
+
+/** How far the report card must be dragged down before it counts as dismissed. */
+private val DismissDragThreshold = 72.dp
+
+/** A flick faster than this dismisses regardless of how far it travelled. */
+private const val DismissFlingVelocity = 800f
 
 /** Enough slack that a marker anchored just past the edge still animates in
  *  smoothly rather than popping once its centre crosses the boundary. */
@@ -710,13 +736,33 @@ private fun MapFallbackNotice(
 private fun IncidentCard(
     incident: MapIncident,
     onViewReportClick: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     distanceLabel: String? = null,
 ) {
     val colors = LocalHimaColors.current
+    val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
+    // Follows the finger on a downward drag, so the card can be pushed away
+    // the way a bottom sheet is expected to be. Keyed on the report so
+    // selecting a different marker starts from rest.
+    val dragOffset = remember(incident.report.id) { Animatable(0f) }
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .offset { IntOffset(0, dragOffset.value.roundToInt()) }
+            .draggable(
+                orientation = Orientation.Vertical,
+                state = rememberDraggableState { delta ->
+                    // Downward only: dragging up must not lift the card off
+                    // the bottom edge and expose the map behind it.
+                    scope.launch { dragOffset.snapTo((dragOffset.value + delta).coerceAtLeast(0f)) }
+                },
+                onDragStopped = { velocity ->
+                    val far = dragOffset.value > with(density) { DismissDragThreshold.toPx() }
+                    if (far || velocity > DismissFlingVelocity) onDismiss() else dragOffset.animateTo(0f)
+                },
+            )
             .shadow(12.dp, RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet))
             .clip(RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet))
             .background(colors.surface),
