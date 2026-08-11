@@ -62,7 +62,7 @@ function parseFirmsCsv(csvText) {
     return {
       latitude: finiteNumber(row.latitude),
       longitude: finiteNumber(row.longitude),
-      // VIIRS reports bright_ti4, MODIS reports brightness — normalize to one field.
+     
       brightness: finiteNumber(row.bright_ti4 ?? row.brightness),
       confidence: row.confidence || null,
       acq_date: row.acq_date || null,
