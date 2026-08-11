@@ -174,6 +174,24 @@ class MapViewModel @Inject constructor(
         viewModelScope.launch { reportsRepository.refresh(force = true) }
     }
 
+    /**
+     * Re-fetch reports every time the map is opened.
+     *
+     * The repository is a @Singleton and its plain `refresh()` returns early
+     * once loadState is Ready, so the non-forced call in `init` is a no-op for
+     * the whole rest of the session. Without this, a report submitted moments
+     * ago never shows up on the map until the app is killed and relaunched —
+     * which is exactly the path a demo takes (submit a report, then switch to
+     * the map to show it landing).
+     *
+     * Forcing is safe for the marker layer: refresh() replaces `_reports` only
+     * after a successful response and never clears it first, so existing
+     * markers stay on screen while the new list loads instead of blinking out.
+     */
+    fun onMapOpened() {
+        viewModelScope.launch { reportsRepository.refresh(force = true) }
+    }
+
     fun onRetryFires() {
         viewModelScope.launch { fireHotspotsRepository.refresh(force = true) }
     }

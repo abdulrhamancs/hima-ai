@@ -60,7 +60,7 @@ class SupabaseReportsRepository @Inject constructor(
         }
 
         _loadState.value = ReportsLoadState.Loading
-        when (val result = moshi.safeApiCall(::parseError) { restApi.getReports("Bearer $token") }) {
+        when (val result = moshi.safeApiCall(::parseError, label = "supabase/reports") { restApi.getReports("Bearer $token") }) {
             is ApiResult.Success -> {
                 val mappedReports = result.value.map { it.toReportSummary() }
                 _reports.value = mappedReports

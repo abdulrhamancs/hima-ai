@@ -268,6 +268,12 @@ fun MapScreen(
         }
     }
 
+    // Pull fresh reports each time this screen is composed, so a report
+    // submitted a moment ago is already on the map when the ranger switches
+    // to it. See MapViewModel.onMapOpened for why the ViewModel's own init
+    // isn't enough on its own.
+    LaunchedEffect(Unit) { viewModel.onMapOpened() }
+
     // Silent check only — a location dot appears immediately if permission
     // was already granted in an earlier session, but this never itself
     // prompts; the system dialog only ever appears from an explicit tap.

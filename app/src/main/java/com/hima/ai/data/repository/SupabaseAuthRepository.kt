@@ -37,7 +37,7 @@ class SupabaseAuthRepository @Inject constructor(
         fullName: String,
         role: UserRole,
     ): ApiResult<AuthSession> {
-        val signUpResult = moshi.safeApiCall(::parseSupabaseError) {
+        val signUpResult = moshi.safeApiCall(::parseSupabaseError, label = "supabase/auth") {
             authApi.signUp(SupabaseCredentialsRequest(email, password))
         }
         val signUpBody = when (signUpResult) {
@@ -58,7 +58,7 @@ class SupabaseAuthRepository @Inject constructor(
         }
 
         val bearer = "Bearer $accessToken"
-        val profileResult = moshi.safeApiCallNoBody(::parsePostgrestError) {
+        val profileResult = moshi.safeApiCallNoBody(::parsePostgrestError, label = "supabase/profile") {
             restApi.insertProfile(bearer, ProfileInsertRequest(id = userId, fullName = fullName, role = role.wireValue))
         }
         if (profileResult is ApiResult.Failure) return profileResult
@@ -73,7 +73,7 @@ class SupabaseAuthRepository @Inject constructor(
     }
 
     override suspend fun login(email: String, password: String): ApiResult<AuthSession> {
-        val loginResult = moshi.safeApiCall(::parseSupabaseError) {
+        val loginResult = moshi.safeApiCall(::parseSupabaseError, label = "supabase/auth") {
             authApi.login(body = SupabaseCredentialsRequest(email, password))
         }
         val loginBody = when (loginResult) {
@@ -89,7 +89,7 @@ class SupabaseAuthRepository @Inject constructor(
         }
 
         val bearer = "Bearer $accessToken"
-        val profileResult = moshi.safeApiCall(::parsePostgrestError) {
+        val profileResult = moshi.safeApiCall(::parsePostgrestError, label = "supabase/profile") {
             restApi.getProfile(bearer, idFilter = "eq.$userId")
         }
         val profiles = when (profileResult) {
@@ -116,7 +116,7 @@ class SupabaseAuthRepository @Inject constructor(
         if (token == null) {
             return ApiResult.Success(Unit)
         }
-        val result = moshi.safeApiCallNoBody(::parseSupabaseError) { authApi.logout("Bearer $token") }
+        val result = moshi.safeApiCallNoBody(::parseSupabaseError, label = "supabase/auth") { authApi.logout("Bearer $token") }
         // Clear locally regardless of server outcome — an unreachable server
         // shouldn't be able to trap the ranger in a "signed in" state.
         _currentSession.value = null

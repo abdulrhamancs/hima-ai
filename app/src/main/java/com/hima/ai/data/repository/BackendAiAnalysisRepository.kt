@@ -70,7 +70,7 @@ class BackendAiAnalysisRepository @Inject constructor(
         val longitudePart = location.longitude.toString()
             .toRequestBody("text/plain".toMediaTypeOrNull())
 
-        val result = moshi.safeApiCall(::parseAnalyzeError) {
+        val result = moshi.safeApiCall(::parseAnalyzeError, label = "analyze/gemini") {
             api.analyzeImage(
                 "Bearer $token",
                 imagePart,
