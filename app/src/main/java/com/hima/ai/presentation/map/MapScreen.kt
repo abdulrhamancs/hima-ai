@@ -153,8 +153,20 @@ fun MapScreen(
         // with each other for this MVP) — a wholly separate visual layer,
         // never sharing an id space with [MapIncident].
         fireMarkerItems = if (uiState.showNasaFires) {
+            // Reject by coordinate before projecting. toScreenLocation crosses
+            // into MapLibre's native side on every call, and this list is the
+            // whole country's detections rather than a clustered handful, so
+            // projecting all of them on every camera tick was what made
+            // panning stutter. Rotation and tilt are both disabled on this map
+            // (see onMapReady), so the visible region is axis-aligned and its
+            // bounds describe it exactly — anything outside them cannot be
+            // on screen. Survivors still go through the same screen-space
+            // check below, so what ends up drawn is unchanged.
+            val visibleBounds = projection.visibleRegion.latLngBounds
             uiState.fireHotspots.mapNotNull { hotspot ->
-                val point = projection.toScreenLocation(LatLng(hotspot.latitude, hotspot.longitude))
+                val position = LatLng(hotspot.latitude, hotspot.longitude)
+                if (!visibleBounds.contains(position)) return@mapNotNull null
+                val point = projection.toScreenLocation(position)
                 val offset = Offset(point.x, point.y)
                 if (offset.isOnScreen(mapSizePx)) hotspot to offset else null
             }
