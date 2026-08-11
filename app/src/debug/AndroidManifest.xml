@@ -4,6 +4,16 @@
 
     <application
         android:networkSecurityConfig="@xml/network_security_config"
-        tools:node="merge" />
+        tools:node="merge">
+
+        <!-- Debug-only artwork gallery; see BadgeGalleryActivity. Exported so
+             it can be launched directly via adb for design review, and kept
+             out of release builds by living in this source set. -->
+        <activity
+            android:name="com.hima.ai.debug.BadgeGalleryActivity"
+            android:exported="true"
+            android:theme="@style/Theme.HimaAI" />
+
+    </application>
 
 </manifest>

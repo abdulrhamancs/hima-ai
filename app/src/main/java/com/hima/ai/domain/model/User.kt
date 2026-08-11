@@ -1,5 +1,7 @@
 package com.hima.ai.domain.model
 
+import java.time.Instant
+
 /** Matches the backend's two account kinds (`field_agent` / `authority`). */
 enum class UserRole(val wireValue: String) {
     FIELD_AGENT("field_agent"),
@@ -16,6 +18,8 @@ data class User(
     val email: String,
     val fullName: String,
     val role: UserRole,
+    /** When the profile row was created — powers "days since joining" on Badges & Achievements. */
+    val joinedAt: Instant? = null,
 )
 
 /** An authenticated session: the user plus the token used to call the backend. */

@@ -58,12 +58,16 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
 
     const parsedLatitude = Number.parseFloat(latitude);
     const parsedLongitude = Number.parseFloat(longitude);
+    const analysisStartedAt = Date.now();
     const analysis = await analyzeImage(req.file.buffer, req.file.mimetype, {
       description: userDescription,
       latitude: parsedLatitude,
       longitude: parsedLongitude,
       language,
     });
+    // Gemini call time only — excludes the Storage upload and DB insert below.
+    const analysis_duration_ms = Date.now() - analysisStartedAt;
+    console.log(`analysis_duration_ms: ${analysis_duration_ms}`);
 
     if (!analysis.is_recognizable || !analysis.is_environmental) {
       return res.status(422).json({
@@ -137,7 +141,8 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
       image_url: imageUrl,
       latitude: dbData.latitude,
       longitude: dbData.longitude,
-      created_at: dbData.created_at
+      created_at: dbData.created_at,
+      analysis_duration_ms
     });
 
   } catch (error) {

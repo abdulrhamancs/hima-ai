@@ -15,6 +15,7 @@ import com.hima.ai.domain.model.User
 import com.hima.ai.domain.model.UserRole
 import com.hima.ai.domain.repository.AuthRepository
 import com.squareup.moshi.Moshi
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,7 +65,16 @@ class SupabaseAuthRepository @Inject constructor(
         if (profileResult is ApiResult.Failure) return profileResult
 
         val session = AuthSession(
-            user = User(id = userId, email = signUpBody.user?.email ?: signUpBody.email ?: email, fullName = fullName, role = role),
+            // The profile row was just inserted above, so "now" is the join
+            // moment — insertProfile returns no body ("Prefer: return=minimal")
+            // to read created_at back from.
+            user = User(
+                id = userId,
+                email = signUpBody.user?.email ?: signUpBody.email ?: email,
+                fullName = fullName,
+                role = role,
+                joinedAt = Instant.now(),
+            ),
             accessToken = accessToken,
             refreshToken = refreshToken,
         )
@@ -102,7 +112,13 @@ class SupabaseAuthRepository @Inject constructor(
             ?: return ApiResult.Failure(AppError.Unexpected("Unknown account role: ${profile.role}"))
 
         val session = AuthSession(
-            user = User(id = userId, email = loginBody.user.email ?: email, fullName = profile.fullName, role = role),
+            user = User(
+                id = userId,
+                email = loginBody.user.email ?: email,
+                fullName = profile.fullName,
+                role = role,
+                joinedAt = profile.createdAt?.let { runCatching { Instant.parse(it) }.getOrNull() },
+            ),
             accessToken = accessToken,
             refreshToken = refreshToken,
         )

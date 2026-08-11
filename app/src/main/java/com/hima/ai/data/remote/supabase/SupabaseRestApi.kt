@@ -31,7 +31,7 @@ interface SupabaseRestApi {
     suspend fun getProfile(
         @Header("Authorization") bearerToken: String,
         @Query("id") idFilter: String,
-        @Query("select") select: String = "full_name,role",
+        @Query("select") select: String = "full_name,role,created_at",
     ): Response<List<ProfileDto>>
 
     /**
@@ -63,6 +63,7 @@ data class ProfileInsertRequest(
 data class ProfileDto(
     @Json(name = "full_name") val fullName: String,
     val role: String,
+    @Json(name = "created_at") val createdAt: String? = null,
 )
 
 @JsonClass(generateAdapter = true)

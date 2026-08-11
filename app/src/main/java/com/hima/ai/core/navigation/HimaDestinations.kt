@@ -21,6 +21,8 @@ object HimaDestinations {
     const val INVESTIGATION = "investigation"
     const val HISTORY = "history"
     const val MORE = "more"
+    const val BADGES = "badges"
+    const val BADGES_TIERS = "badges/tiers"
     const val MORE_CONTACT = "more/contact"
     const val MORE_FAQ = "more/faq"
     const val MORE_PRIVACY = "more/privacy"

@@ -363,6 +363,54 @@
     <string name="common_cancel">Cancel</string>
     <string name="more_coming_soon">Coming soon in Hima AI</string>
     <string name="more_coming_soon_description">This page is ready to connect to the official content when it becomes available.</string>
+    <string name="more_section_achievements">Achievements</string>
+    <string name="more_badges">Badges &amp; Achievements</string>
+    <string name="more_badges_subtitle">Track your progress and current badge level</string>
+    <string name="common_close">Close</string>
+
+    <!-- Badges & Achievements -->
+    <string name="badges_title">Badges &amp; Achievements</string>
+    <string name="cd_badges_info">About badges</string>
+    <string name="badges_info_title">About badges</string>
+    <string name="badges_info_message">Badges are awarded automatically as your verified reports grow, recognizing your contribution to protecting the environment.</string>
+    <string name="badges_current_badge_label">Your current badge</string>
+    <string name="badges_points_label">Environmental points</string>
+    <string name="badges_progress_of_next">%1$d of %2$d verified reports</string>
+    <string name="badges_progress_to_reach">to reach the %1$s badge</string>
+    <string name="badges_percent_value">%1$d%%</string>
+    <string name="badges_fully_achieved_title">You\'ve reached the highest badge!</string>
+    <string name="badges_fully_achieved_subtitle">You\'re at the top of Hima AI\'s environment protectors</string>
+    <string name="badges_stat_total">Total verified reports</string>
+    <string name="badges_stat_processed">Reports processed</string>
+    <string name="badges_stat_days">Days since joining</string>
+    <string name="badges_path_title">Badge path</string>
+    <string name="badges_view_all">View all</string>
+    <string name="badges_obtained_tag">Obtained</string>
+    <string name="badges_current_tag">Current badge</string>
+    <string name="badges_not_achieved_tag">Not achieved</string>
+    <string name="badges_requirement_reports">%1$d verified reports</string>
+    <string name="badges_empty_path">Send your first report to start the badge path</string>
+    <string name="badges_date_placeholder">—</string>
+    <string name="badges_cta_title">Keep reporting</string>
+    <string name="badges_cta_subtitle">Report more, and help protect our nature for future generations</string>
+
+    <string name="badge_tier_pioneer">Pioneer</string>
+    <string name="badge_tier_bronze">Bronze</string>
+    <string name="badge_tier_silver">Silver</string>
+    <string name="badge_tier_gold">Gold</string>
+    <string name="badge_tier_platinum">Platinum</string>
+    <string name="badge_tier_diamond">Diamond</string>
+    <string name="badge_tier_guardian">Environment Guardian</string>
+    <string name="badge_tier_ambassador">Environment Ambassador</string>
+
+    <string name="badge_status_pioneer">The start of your environmental journey</string>
+    <string name="badge_status_bronze">A great step toward greater protection</string>
+    <string name="badge_status_silver">Notable progress on your environmental journey</string>
+    <string name="badge_status_gold">Excellent! You\'re among our top environment protectors</string>
+    <string name="badge_status_platinum">Exceptional performance in protecting nature</string>
+    <string name="badge_status_diamond">Outstanding commitment making a real difference</string>
+    <string name="badge_status_guardian">You\'re a true guardian of our natural environment</string>
+    <string name="badge_status_ambassador">You\'re an inspiring role model in environmental protection</string>
 
     <!-- Home notifications sheet -->
     <string name="notifications_title">Notifications</string>

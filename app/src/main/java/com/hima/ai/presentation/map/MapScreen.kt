@@ -4,8 +4,12 @@ import android.Manifest
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -50,10 +55,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.location.LocationServices
@@ -153,8 +161,20 @@ fun MapScreen(
         // with each other for this MVP) — a wholly separate visual layer,
         // never sharing an id space with [MapIncident].
         fireMarkerItems = if (uiState.showNasaFires) {
+            // Reject by coordinate before projecting. toScreenLocation crosses
+            // into MapLibre's native side on every call, and this list is the
+            // whole country's detections rather than a clustered handful, so
+            // projecting all of them on every camera tick was what made
+            // panning stutter. Rotation and tilt are both disabled on this map
+            // (see onMapReady), so the visible region is axis-aligned and its
+            // bounds describe it exactly — anything outside them cannot be
+            // on screen. Survivors still go through the same screen-space
+            // check below, so what ends up drawn is unchanged.
+            val visibleBounds = projection.visibleRegion.latLngBounds
             uiState.fireHotspots.mapNotNull { hotspot ->
-                val point = projection.toScreenLocation(LatLng(hotspot.latitude, hotspot.longitude))
+                val position = LatLng(hotspot.latitude, hotspot.longitude)
+                if (!visibleBounds.contains(position)) return@mapNotNull null
+                val point = projection.toScreenLocation(position)
                 val offset = Offset(point.x, point.y)
                 if (offset.isOnScreen(mapSizePx)) hotspot to offset else null
             }
@@ -221,11 +241,22 @@ fun MapScreen(
             latestRegroupIncidents.value(currentMap)
             viewModel.onCameraMoved(currentMap.cameraPosition)
         }
+        // Tapping bare map closes an open report card. MapLibre reports this
+        // only for a tap, so panning and zooming are unaffected, and markers
+        // are Compose overlays that consume their own taps before the map sees
+        // them. Dismiss only — never navigate: the scrim this card replaced
+        // conflated the two, which turned a stray tap into leaving the screen.
+        val mapClickListener = MapLibreMap.OnMapClickListener {
+            viewModel.onDismissSheet()
+            false
+        }
         currentMap.addOnCameraMoveListener(moveListener)
         currentMap.addOnCameraIdleListener(idleListener)
+        currentMap.addOnMapClickListener(mapClickListener)
         onDispose {
             currentMap.removeOnCameraMoveListener(moveListener)
             currentMap.removeOnCameraIdleListener(idleListener)
+            currentMap.removeOnMapClickListener(mapClickListener)
         }
     }
 
@@ -281,6 +312,20 @@ fun MapScreen(
         if (context.hasLocationPermission()) {
             viewModel.onLocationPermissionResult(true)
             fetchLocation()
+        }
+    }
+
+    val incident = uiState.selectedIncident
+    if (incident != null) {
+        // Browsing the Map dismisses the selected marker normally. A focused
+        // route opened by Detail returns to that same report in one press.
+        BackHandler(onBack = {
+            if (viewModel.openedForFocusedReport) onBackClick() else viewModel.onDismissSheet()
+        })
+    }
+    val incidentDistanceLabel = incident?.let {
+        uiState.userLocation?.let { userLocation ->
+            distanceBearing(userLocation, LatLng(it.latitude, it.longitude)).formatLabel()
         }
     }
 
@@ -447,6 +492,26 @@ fun MapScreen(
                     .fillMaxWidth()
                     .padding(top = 50.dp, start = 16.dp, end = 16.dp),
             )
+
+            // The selected report's card. Deliberately *not* a ModalBottomSheet:
+            // that lays a full-screen scrim over the map, so a drag meant to pan
+            // to the pin landed on the scrim instead. Worse, dismissing a
+            // focus-opened selection navigates back to the report, which turned
+            // "move the map" into "leave the screen". As a plain bottom-aligned
+            // card it occupies only its own bounds, and the map stays live
+            // around it — only the button inside it navigates.
+            if (incident != null) {
+                IncidentCard(
+                    incident = incident,
+                    distanceLabel = incidentDistanceLabel,
+                    onViewReportClick = {
+                        viewModel.onDismissSheet()
+                        onViewReportClick(incident.report.id)
+                    },
+                    onDismiss = viewModel::onDismissSheet,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
 
         HimaBottomNavigation(
@@ -457,36 +522,6 @@ fun MapScreen(
             onReportsClick = onReportsClick,
             onMoreClick = onMoreClick,
         )
-    }
-
-    val incident = uiState.selectedIncident
-    if (incident != null) {
-        // Browsing the Map dismisses the selected marker normally. A focused
-        // route opened by Detail returns to that same report in one press.
-        val dismissSelection = {
-            if (viewModel.openedForFocusedReport) onBackClick() else viewModel.onDismissSheet()
-        }
-        BackHandler(onBack = dismissSelection)
-        val sheetState = rememberModalBottomSheetState()
-        val distanceLabel = uiState.userLocation?.let { userLocation ->
-            distanceBearing(userLocation, LatLng(incident.latitude, incident.longitude)).formatLabel()
-        }
-        ModalBottomSheet(
-            onDismissRequest = dismissSelection,
-            sheetState = sheetState,
-            containerColor = colors.surface,
-            shape = RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet),
-            dragHandle = { IncidentSheetHandle() },
-        ) {
-            IncidentSheetContent(
-                incident = incident,
-                distanceLabel = distanceLabel,
-                onViewReportClick = {
-                    viewModel.onDismissSheet()
-                    onViewReportClick(incident.report.id)
-                },
-            )
-        }
     }
 
     val fireHotspot = uiState.selectedFireHotspot
@@ -507,6 +542,12 @@ fun MapScreen(
 
 private const val REPORT_FOCUS_ZOOM = 15.0
 private const val REPORT_FOCUS_DURATION_MS = 700
+
+/** How far the report card must be dragged down before it counts as dismissed. */
+private val DismissDragThreshold = 72.dp
+
+/** A flick faster than this dismisses regardless of how far it travelled. */
+private const val DismissFlingVelocity = 800f
 
 /** Enough slack that a marker anchored just past the edge still animates in
  *  smoothly rather than popping once its centre crosses the boundary. */
@@ -685,6 +726,57 @@ private fun MapFallbackNotice(
     }
 }
 
+/**
+ * The selected report, docked to the bottom of the map. Keeps the sheet's look
+ * — surface, rounded top corners, drag handle — without a modal's scrim, so it
+ * covers only the strip it actually occupies and leaves the map draggable
+ * everywhere else. Dismissed with Back or by choosing another marker.
+ */
+@Composable
+private fun IncidentCard(
+    incident: MapIncident,
+    onViewReportClick: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    distanceLabel: String? = null,
+) {
+    val colors = LocalHimaColors.current
+    val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
+    // Follows the finger on a downward drag, so the card can be pushed away
+    // the way a bottom sheet is expected to be. Keyed on the report so
+    // selecting a different marker starts from rest.
+    val dragOffset = remember(incident.report.id) { Animatable(0f) }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .offset { IntOffset(0, dragOffset.value.roundToInt()) }
+            .draggable(
+                orientation = Orientation.Vertical,
+                state = rememberDraggableState { delta ->
+                    // Downward only: dragging up must not lift the card off
+                    // the bottom edge and expose the map behind it.
+                    scope.launch { dragOffset.snapTo((dragOffset.value + delta).coerceAtLeast(0f)) }
+                },
+                onDragStopped = { velocity ->
+                    val far = dragOffset.value > with(density) { DismissDragThreshold.toPx() }
+                    if (far || velocity > DismissFlingVelocity) onDismiss() else dragOffset.animateTo(0f)
+                },
+            )
+            .shadow(12.dp, RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet))
+            .clip(RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet))
+            .background(colors.surface),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        IncidentSheetHandle()
+        IncidentSheetContent(
+            incident = incident,
+            distanceLabel = distanceLabel,
+            onViewReportClick = onViewReportClick,
+        )
+    }
+}
+
 @Composable
 private fun IncidentSheetHandle(modifier: Modifier = Modifier) {
     val colors = LocalHimaColors.current
@@ -709,9 +801,17 @@ private fun IncidentSheetContent(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
+            // Top inset clears the sheet's 24dp corner radius, so the thumbnail
+            // sits inside the straight part of the edge rather than alongside
+            // the curve. Horizontal inset matches the 20dp the other screens use.
+            .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 6.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            // Same gap rhythm as ReportRow, and direction-agnostic, so Arabic
+            // mirrors it without a second set of values.
+            horizontalArrangement = Arrangement.spacedBy(13.dp),
+        ) {
             ReportImage(
                 imageUrl = report.imageUrl,
                 demoImageRes = report.demoImageRes,
@@ -721,11 +821,7 @@ private fun IncidentSheetContent(
                     .size(58.dp)
                     .clip(RoundedCornerShape(HimaRadius.thumb)),
             )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 13.dp, end = 13.dp),
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = report.titleOverride ?: stringResource(report.titleRes),
                     style = HimaTextStyles.t.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
@@ -767,7 +863,7 @@ private fun IncidentSheetContent(
             text = stringResource(R.string.map_view_report),
             onClick = onViewReportClick,
             leadingIconRes = R.drawable.ic_chevron,
-            modifier = Modifier.padding(top = 22.dp, bottom = 28.dp),
+            modifier = Modifier.padding(top = 20.dp, bottom = 24.dp),
         )
     }
 }
