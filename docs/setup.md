@@ -1,8 +1,9 @@
 # Local Setup
 
-The project is now a real Gradle Android project (Phase 0 + Phase 1 complete).
-It opens and syncs in Android Studio and runs a themed placeholder flow that
-proves the design-system pipeline.
+The project is a real Gradle Android project with the full flow implemented:
+Supabase-backed login, photo capture, Gemini-powered AI analysis (via the
+local Node backend), the reserve map, and report history. It opens and syncs
+in Android Studio like any standard Android app.
 
 ## Prerequisites
 
@@ -31,8 +32,31 @@ All versions live in [`gradle/libs.versions.toml`](../gradle/libs.versions.toml)
    - **generate the Gradle wrapper** — accept if asked (the wrapper `.jar` isn't
      committed; Studio recreates it from `gradle/wrapper/gradle-wrapper.properties`).
    It also writes `local.properties` with your `sdk.dir` automatically.
-3. Let Gradle sync finish, then **Run** the `app` config on a device/emulator.
-   You'll see a themed "Sign in" placeholder → tap through to Home → Capture.
+3. Start the backend first (see below) — without it, AI analysis fails. Then
+   let Gradle sync finish and **Run** the `app` config on a device/emulator.
+   You'll land on Login (Supabase-backed) → Home → New Report → AI Analysis.
+
+## Running the backend
+
+The AI analysis flow (and the map's live fire layer) goes through the local
+Node/Express server in `backend/`. It must be running before you use those
+features in the app.
+
+```bash
+cd backend
+npm install
+node index.js
+```
+
+`backend/.env` must define `GEMINI_API_KEY`, `SUPABASE_URL`,
+`SUPABASE_PUBLISHABLE_KEY`, and `NASA_FIRMS_MAP_KEY` — the backend refuses to
+boot without `GEMINI_API_KEY`. From the repo root, `./run-demo.sh` does the
+`npm install` + start for you, then builds/installs/launches the app.
+
+The emulator reaches the backend at `http://10.0.2.2:5000/` by default (set
+via `BACKEND_BASE_URL` in `local.properties`). A **physical device** needs
+that overridden to your machine's LAN IP, e.g.
+`BACKEND_BASE_URL=http://192.168.1.x:5000/`.
 
 ## Secrets — never commit them
 
@@ -45,11 +69,13 @@ Android's git-ignored `local.properties` contains only its SDK path and client
 configuration such as `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
 `BACKEND_BASE_URL`, and `MAPTILER_API_KEY`.
 
-## Deferred (added in their phases, not yet wired)
+## Not used
 
-- **Firebase** (Phase 2 — Login): drop `app/google-services.json` in, then
-  uncomment the `google-services` plugin and Firebase deps (both are already in
-  the version catalog and flagged with comments). See
-  [`firebase-setup.md`](firebase-setup.md).
-- **Gemini Android SDK:** not required. The app sends evidence to the existing
+- **Firebase**: `firebase-bom`/Auth/Firestore/Storage are still declared in
+  `gradle/libs.versions.toml` and the `google-services` plugin is commented
+  out in `app/build.gradle.kts`, but none of it is wired up. Auth, the
+  database, and file storage all run on Supabase instead — see
+  `SupabaseAuthRepository` and `SupabaseReportsRepository`. Ignore
+  `firebase-setup.md`; it documents the superseded approach.
+- **Gemini Android SDK:** not required. The app sends evidence to the
   backend, which performs Gemini analysis server-side.
