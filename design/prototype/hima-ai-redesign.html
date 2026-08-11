@@ -60,7 +60,7 @@
   }
   .phone[dir="rtl"]{font-family:-apple-system,"SF Arabic","Geeza Pro","Noto Sans Arabic",system-ui,sans-serif}
 
-  /* ── status bar ── */
+  
   .sbar{position:absolute;top:0;inset-inline:0;height:54px;display:flex;align-items:center;
     justify-content:space-between;padding:14px 32px 0;font:600 15px/1 -apple-system,system-ui;z-index:60;
     letter-spacing:-.01em;pointer-events:none}
@@ -71,7 +71,7 @@
   .sig i:nth-child(3){height:11px}.sig i:nth-child(4){height:14px}
   .batt{width:24px;height:12px;border-radius:3.5px;background:currentColor;opacity:.9}
 
-  /* ── screens ── */
+  
   .screen{position:absolute;inset:0;background:var(--canvas);display:none;flex-direction:column;
     animation:fadein .34s var(--ease)}
   .screen.active{display:flex}
@@ -83,7 +83,7 @@
     width:138px;height:5px;border-radius:99px;background:#111;opacity:.24;z-index:70}
   .homebar.light{background:#fff;opacity:.5}
 
-  /* ── type ── */
+ 
   .display{font:600 32px/1.16 -apple-system,"SF Pro Display",system-ui;letter-spacing:-.028em}
   .title{font:600 22px/1.24 -apple-system,"SF Pro Display",system-ui;letter-spacing:-.021em}
   .verdict{font:600 27px/1.2 -apple-system,"SF Pro Display",system-ui;letter-spacing:-.026em}
@@ -92,7 +92,7 @@
   .sec{font:400 15px/1.5;color:var(--ink-2);letter-spacing:-.008em}
   .num{font-variant-numeric:tabular-nums}
 
-  /* ── controls ── */
+
   .btn{
     width:100%;height:54px;border:0;border-radius:16px;background:var(--green);color:#fff;
     font:500 17px/1 inherit;letter-spacing:-.012em;cursor:pointer;
@@ -110,7 +110,7 @@
   .field::placeholder{color:var(--ink-3)}
   .field:focus{outline:2px solid rgba(15,81,50,.28);outline-offset:0}
 
-  /* ── nav ── */
+
   .tabs{height:82px;display:flex;padding:10px 12px 0;background:rgba(250,250,249,.86);
     backdrop-filter:blur(20px) saturate(180%);position:relative;z-index:40}
   .tab{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;
@@ -125,7 +125,7 @@
   .phone[dir="rtl"] .back svg{transform:scaleX(-1)}
   .phone[dir="rtl"] .chev{transform:scaleX(-1)}
 
-  /* ── surfaces ── */
+  
   .card{background:var(--surface);border-radius:24px;box-shadow:var(--shadow)}
   .dot{width:7px;height:7px;border-radius:99px;flex:0 0 auto}
   .thumb{width:46px;height:46px;border-radius:13px;overflow:hidden;flex:0 0 auto;background:var(--sunk)}
@@ -139,7 +139,7 @@
     overflow:hidden;text-overflow:ellipsis}
   .row.done{opacity:.5}
 
-  /* ── home ── */
+ 
   .alertline{display:flex;align-items:baseline;gap:9px;cursor:pointer;margin-top:20px}
   .alertline .n{color:var(--ember)}
   .map{height:176px;border-radius:24px;overflow:hidden;position:relative;box-shadow:var(--shadow);
@@ -154,7 +154,7 @@
   .queue .d{width:5px;height:5px;border-radius:99px;background:var(--sand)}
   .fab{position:absolute;bottom:96px;inset-inline:24px;z-index:30}
 
-  /* ── camera ── */
+
   .cam{position:absolute;inset:0;overflow:hidden;background:#111}
   .cam svg{position:absolute;inset:0;width:100%;height:100%}
   .gpspill{position:absolute;top:66px;inset-inline:0;margin:auto;width:max-content;max-width:300px;
@@ -173,7 +173,7 @@
   .reticle{position:absolute;inset:120px 44px 200px;border-radius:22px;z-index:10;
     box-shadow:0 0 0 1.5px rgba(255,255,255,.22) inset;opacity:.7}
 
-  /* ── review draft ── */
+
   .photo-card{border-radius:22px;overflow:hidden;box-shadow:var(--shadow);height:210px;position:relative}
   .photo-card svg{width:100%;height:100%;display:block}
   .draft>*{opacity:0;transform:translateY(7px)}
@@ -190,7 +190,7 @@
   .tok svg{opacity:.35}
   .noteline{display:flex;align-items:center;gap:10px;padding:14px 0;cursor:text;color:var(--ink-3)}
 
-  /* ── analysis ── */
+ 
   .hero{height:268px;position:relative;flex:0 0 auto}
   .hero svg{width:100%;height:100%;display:block}
   .hero::after{content:"";position:absolute;inset:0;
@@ -208,7 +208,7 @@
   .rec p{font:500 16.5px/1.4 inherit;letter-spacing:-.014em;margin-top:9px}
   .askrow{display:flex;align-items:center;justify-content:space-between;padding:20px 0 8px;cursor:pointer;color:var(--ink-2)}
 
-  /* ── sheet ── */
+ 
   .scrim{position:absolute;inset:0;background:rgba(17,19,18,.28);backdrop-filter:blur(2px);
     z-index:80;opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
   .scrim.on{opacity:1;pointer-events:auto}
@@ -230,7 +230,7 @@
   .send{width:38px;height:38px;border-radius:12px;border:0;background:var(--green);color:#fff;
     display:grid;place-items:center;cursor:pointer}
 
-  /* ── history ── */
+ 
   .seg{display:flex;background:var(--sunk);border-radius:13px;padding:3px;margin-top:6px}
   .seg button{flex:1;height:36px;border:0;border-radius:10px;background:none;cursor:pointer;
     font:500 14.5px/1 inherit;color:var(--ink-2);transition:.2s var(--ease)}
@@ -257,7 +257,7 @@
 <div class="rail" id="rail"></div>
 
 <script>
-/* ═══════ art: no external assets, everything drawn ═══════ */
+
 const desert = (id,tracks=true)=>`
 <svg viewBox="0 0 390 300" preserveAspectRatio="xMidYMid slice">
  <defs>
@@ -319,7 +319,7 @@ const I = {
   shield:'<svg width="52" height="52" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M24 4.5 40 10v13c0 10-6.8 17.6-16 20.5C14.8 40.6 8 33 8 23V10z"/><path d="M17 23.5l5 5 10-10.5"/></svg>'
 };
 
-/* ═══════ copy (en / ar) ═══════ */
+
 const T = {
  en:{
   signin:"Sign in", nafath:"Continue with Nafath", email:"Use work email instead",
@@ -387,7 +387,7 @@ const T = {
 let L = "en";
 const t = k => T[L][k];
 
-/* ═══════ screens ═══════ */
+
 const sbar = (dark=false)=>`<div class="sbar ${dark?"on-dark":""}"><span class="num">09:41</span>
  <span style="display:flex;gap:7px;align-items:center"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>`;
 
@@ -545,7 +545,7 @@ history:()=>`<div class="screen" data-s="history">${sbar()}
  ${tabs("r")}<div class="homebar"></div></div>`
 };
 
-/* ═══════ board ═══════ */
+
 const SLOTS = [
   ["login","Sign in","Nafath first, one button. The splash screen is deleted — the mark animates straight into this header."],
   ["home","Home","One number that matters. Utilities grid and two vanity stats removed; the map is monochrome so only severity carries colour."],
