@@ -5,12 +5,10 @@ const fs = require("fs");
 const path = require("path");
 const authMiddleware = require("../middleware/authMiddleware");
 
-// Static GeoJSON layer. Populate data/protected-areas.geojson once official
-// boundary data is sourced (NCW data request or a Protected Planet/WDPA export) —
-// each Feature should carry properties: id, name_ar, name_en, area, category.
+
 const DATA_PATH = path.join(__dirname, "..", "data", "protected-areas.geojson");
 
-// GET /protected-areas — Saudi protected areas as a GeoJSON FeatureCollection
+
 router.get("/", authMiddleware, (req, res) => {
   try {
     const raw = fs.readFileSync(DATA_PATH, "utf8");
