@@ -79,14 +79,9 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
       });
     }
 
-    // Scoped to this caller's own token — the default `supabase` client has
-    // no user session, so RLS (`auth.uid() = user_id`) rejected every insert
-    // regardless of the column-name fix below.
     const userSupabase = supabase.createUserClient(req.token);
 
-    // Reuse the same bucket and user-scoped path as POST /reports. Storage
-    // policies grant each signed-in user access to their own top-level folder;
-    // the old `incident-images/reports/...` path was rejected by that policy.
+  
     const imageBucket = "report-images";
     const safeOriginalName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
     const fileName = `${userId}/${Date.now()}-${safeOriginalName}`;
@@ -103,10 +98,7 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
     const { data: publicUrlData } = userSupabase.storage.from(imageBucket).getPublicUrl(fileName);
     const imageUrl = publicUrlData ? publicUrlData.publicUrl : "";
 
-    // Column names match the live `reports` table (type/severity/recommended_action/
-    // ai_analysis) — the previous version of this insert (issue_type/ai_description/
-    // risk_level/investigation_question/status:"pending_question") named columns
-    // that don't exist on that table, so every /analyze call failed at this step.
+   
     const { data: dbData, error: dbError } = await userSupabase
       .from("reports")
       .insert({
@@ -132,9 +124,7 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
 
     if (dbError) {
       console.error("Database Insert Error:", dbError);
-      // The raw Postgres/PostgREST message is for the server log, not the
-      // client — it can include column/constraint names that mean nothing
-      // to a ranger and shouldn't be exposed anyway.
+    
       return res.status(500).json({ error: "Something went wrong while saving the report. Please try again." });
     }
 
@@ -158,9 +148,7 @@ app.post("/analyze", authMiddleware, upload.single("image"), async (req, res) =>
       return res.status(429).json({ error: quotaMessage });
     }
 
-    // Logged in full for debugging; the client only ever gets a clean,
-    // generic message — the real error (Gemini internals, stack traces,
-    // API URLs) has no business reaching the app's UI.
+   
     console.error(error);
     res.status(500).json({ error: "Something went wrong while analyzing the image. Please try again." });
   }
