@@ -69,6 +69,7 @@ fun MoreScreen(
     onPrivacyClick: () -> Unit,
     onTermsClick: () -> Unit,
     onRateAppClick: () -> Unit,
+    onBadgesClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MoreViewModel = hiltViewModel(),
 ) {
@@ -96,6 +97,17 @@ fun MoreScreen(
             item {
                 SectionLabel(stringResource(R.string.more_section_account))
                 ProfileCard(uiState)
+            }
+
+            item {
+                SettingsSection(stringResource(R.string.more_section_achievements)) {
+                    SettingsRow(
+                        iconRes = R.drawable.ic_trophy,
+                        title = stringResource(R.string.more_badges),
+                        subtitle = stringResource(R.string.more_badges_subtitle),
+                        onClick = onBadgesClick,
+                    )
+                }
             }
 
             item {

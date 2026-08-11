@@ -363,6 +363,54 @@
     <string name="common_cancel">إلغاء</string>
     <string name="more_coming_soon">قريباً في Hima AI</string>
     <string name="more_coming_soon_description">هذه الصفحة جاهزة للربط بالمحتوى الرسمي عند توفره.</string>
+    <string name="more_section_achievements">الإنجازات</string>
+    <string name="more_badges">الأوسمة والإنجازات</string>
+    <string name="more_badges_subtitle">تتبع تقدمك ومستوى وسامك الحالي</string>
+    <string name="common_close">إغلاق</string>
+
+    <!-- Badges & Achievements -->
+    <string name="badges_title">الأوسمة والإنجازات</string>
+    <string name="cd_badges_info">عن الأوسمة</string>
+    <string name="badges_info_title">عن الأوسمة</string>
+    <string name="badges_info_message">تُمنح الأوسمة تلقائيًا كلما ارتفع عدد بلاغاتك الموثقة، تقديرًا لمساهمتك في حماية البيئة.</string>
+    <string name="badges_current_badge_label">وسامك الحالي</string>
+    <string name="badges_points_label">النقاط البيئية</string>
+    <string name="badges_progress_of_next">%1$d من %2$d بلاغًا موثقًا</string>
+    <string name="badges_progress_to_reach">للوصول إلى الوسام %1$s</string>
+    <string name="badges_percent_value">%1$d%%</string>
+    <string name="badges_fully_achieved_title">لقد حققت أعلى وسام!</string>
+    <string name="badges_fully_achieved_subtitle">أنت في قمة حماة البيئة في Hima AI</string>
+    <string name="badges_stat_total">إجمالي البلاغات الموثقة</string>
+    <string name="badges_stat_processed">بلاغات تمت معالجتها</string>
+    <string name="badges_stat_days">أيام منذ انضمامك</string>
+    <string name="badges_path_title">مسار الأوسمة</string>
+    <string name="badges_view_all">عرض الكل</string>
+    <string name="badges_obtained_tag">تم الحصول عليه</string>
+    <string name="badges_current_tag">وسامك الحالي</string>
+    <string name="badges_not_achieved_tag">غير محقق</string>
+    <string name="badges_requirement_reports">%1$d بلاغًا موثقًا</string>
+    <string name="badges_empty_path">ابدأ بإرسال أول بلاغ لفتح مسار الأوسمة</string>
+    <string name="badges_date_placeholder">—</string>
+    <string name="badges_cta_title">استمر في الإبلاغ</string>
+    <string name="badges_cta_subtitle">بلّغ أكثر، وكن سببًا في حماية طبيعتنا للأجيال القادمة</string>
+
+    <string name="badge_tier_pioneer">المبادر</string>
+    <string name="badge_tier_bronze">برونزي</string>
+    <string name="badge_tier_silver">فضي</string>
+    <string name="badge_tier_gold">الذهبي</string>
+    <string name="badge_tier_platinum">البلاتيني</string>
+    <string name="badge_tier_diamond">ماسي</string>
+    <string name="badge_tier_guardian">حارس البيئة</string>
+    <string name="badge_tier_ambassador">سفير البيئة</string>
+
+    <string name="badge_status_pioneer">بداية طريقك في حماية البيئة</string>
+    <string name="badge_status_bronze">خطوة رائعة نحو حماية أكبر</string>
+    <string name="badge_status_silver">تقدم ملحوظ في مسيرتك البيئية</string>
+    <string name="badge_status_gold">ممتاز! أنت من أبرز حماة البيئة</string>
+    <string name="badge_status_platinum">أداء استثنائي في حماية الطبيعة</string>
+    <string name="badge_status_diamond">التزام متميز يُحدث فرقًا حقيقيًا</string>
+    <string name="badge_status_guardian">أنت حارس حقيقي لبيئتنا الطبيعية</string>
+    <string name="badge_status_ambassador">أنت قدوة ملهمة في حماية البيئة</string>
 
     <!-- Home notifications sheet -->
     <string name="notifications_title">التنبيهات</string>

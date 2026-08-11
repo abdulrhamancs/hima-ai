@@ -19,6 +19,8 @@ import com.hima.ai.data.mock.CaptureSource
 import com.hima.ai.domain.model.AnalysisResultCategory
 import com.hima.ai.presentation.auth.LoginScreen
 import com.hima.ai.presentation.auth.SignUpScreen
+import com.hima.ai.presentation.badges.BadgeTierListScreen
+import com.hima.ai.presentation.badges.BadgesScreen
 import com.hima.ai.presentation.history.HistoryScreen
 import com.hima.ai.presentation.home.HomeScreen
 import com.hima.ai.presentation.map.MapScreen
@@ -292,7 +294,19 @@ fun HimaNavHost(
                 onPrivacyClick = { push(entry, HimaDestinations.MORE_PRIVACY) },
                 onTermsClick = { push(entry, HimaDestinations.MORE_TERMS) },
                 onRateAppClick = { push(entry, HimaDestinations.MORE_RATE_APP) },
+                onBadgesClick = { push(entry, HimaDestinations.BADGES) },
             )
+        }
+
+        composable(HimaDestinations.BADGES) { entry ->
+            BadgesScreen(
+                onBackClick = { back(entry) },
+                onViewAllTiersClick = { push(entry, HimaDestinations.BADGES_TIERS) },
+            )
+        }
+
+        composable(HimaDestinations.BADGES_TIERS) { entry ->
+            BadgeTierListScreen(onBackClick = { back(entry) })
         }
 
         composable(HimaDestinations.MORE_CONTACT) { entry ->
