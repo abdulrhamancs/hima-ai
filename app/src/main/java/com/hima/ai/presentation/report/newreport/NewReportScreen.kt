@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,13 +15,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,8 +45,11 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hima.ai.R
+import com.hima.ai.core.designsystem.component.HimaIconButton
 import com.hima.ai.core.designsystem.component.HimaPrimaryButton
 import com.hima.ai.core.designsystem.component.HimaTextArea
+import com.hima.ai.core.designsystem.component.HimaTextField
+import com.hima.ai.core.designsystem.component.HimaTextLink
 import com.hima.ai.core.designsystem.component.ImagePickerCard
 import com.hima.ai.core.designsystem.component.ScreenHeader
 import com.hima.ai.core.designsystem.component.SelectedImageCard
@@ -47,7 +57,9 @@ import com.hima.ai.core.designsystem.component.StepIndicator
 import com.hima.ai.core.designsystem.theme.HimaRadius
 import com.hima.ai.core.designsystem.theme.HimaTextStyles
 import com.hima.ai.core.designsystem.theme.LocalHimaColors
+import com.hima.ai.core.location.SaudiPlaces
 import com.hima.ai.core.location.hasLocationPermission
+import com.hima.ai.data.mock.ManualLocation
 
 /**
  * New report — attach evidence, confirm the auto-detected location, add an
@@ -67,6 +79,7 @@ fun NewReportScreen(
     val colors = LocalHimaColors.current
     val context = LocalContext.current
     var locationPermissionDenied by rememberSaveable { mutableStateOf(false) }
+    var showLocationPicker by rememberSaveable { mutableStateOf(false) }
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) {
@@ -77,9 +90,12 @@ fun NewReportScreen(
             locationPermissionDenied = true
         }
     }
-    val analyzeWithLocation = remember(context, onAnalyzeClick) {
+    // A hand-picked location makes the GPS permission irrelevant for this
+    // report, so don't prompt for something the submission won't use.
+    val hasManualLocation = uiState.manualLocation != null
+    val analyzeWithLocation = remember(context, onAnalyzeClick, hasManualLocation) {
         {
-            if (context.hasLocationPermission()) {
+            if (hasManualLocation || context.hasLocationPermission()) {
                 onAnalyzeClick()
             } else {
                 locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -133,7 +149,10 @@ fun NewReportScreen(
                 color = colors.ink,
                 modifier = Modifier.padding(top = 24.dp, bottom = 10.dp),
             )
-            LocationField()
+            LocationField(
+                manualLocation = uiState.manualLocation,
+                onEditClick = { showLocationPicker = true },
+            )
 
             Row(
                 modifier = Modifier.padding(top = 24.dp, bottom = 10.dp),
@@ -182,18 +201,38 @@ fun NewReportScreen(
             Spacer(Modifier.height(30.dp))
         }
     }
+
+    if (showLocationPicker) {
+        ManualLocationPicker(
+            selected = uiState.manualLocation,
+            onSelect = viewModel::onManualLocationChange,
+            onDismiss = { showLocationPicker = false },
+        )
+    }
 }
 
-/** The auto-detected location, shown as a resolved value rather than an input. */
+/**
+ * The report's location: normally the auto-detected GPS fix, shown as a
+ * resolved value rather than an input. Tapping the pencil opens a picker that
+ * overrides it for this one report — a demo aid, so a report can be filed for
+ * anywhere in the country regardless of where the device actually is.
+ *
+ * When an override is active the row says so explicitly, so it can't be
+ * mistaken for a real GPS reading.
+ */
 @Composable
-private fun LocationField(modifier: Modifier = Modifier) {
+private fun LocationField(
+    manualLocation: ManualLocation?,
+    onEditClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val colors = LocalHimaColors.current
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(HimaRadius.field))
             .background(colors.bg2)
-            .padding(horizontal = 16.dp, vertical = 18.dp),
+            .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -203,10 +242,118 @@ private fun LocationField(modifier: Modifier = Modifier) {
             tint = colors.green,
             modifier = Modifier.size(19.dp),
         )
-        Text(
-            text = stringResource(R.string.new_report_location_pending),
-            style = HimaTextStyles.t.copy(fontSize = 15.sp),
-            color = colors.ink,
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = manualLocation
+                    ?.let { stringResource(it.labelRes) }
+                    ?: stringResource(R.string.new_report_location_pending),
+                style = HimaTextStyles.t.copy(fontSize = 15.sp),
+                color = colors.ink,
+            )
+            if (manualLocation != null) {
+                Text(
+                    text = stringResource(R.string.new_report_location_custom_badge),
+                    style = HimaTextStyles.m.copy(fontSize = 11.5.sp),
+                    color = colors.green,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        HimaIconButton(
+            iconRes = R.drawable.ic_my_location,
+            contentDescription = stringResource(R.string.cd_edit_location),
+            onClick = onEditClick,
         )
+    }
+}
+
+/**
+ * The manual-location picker. A filterable list of well-known Saudi places
+ * plus an explicit way back to real GPS.
+ *
+ * A fixed list rather than a geocoded search: Geocoder's name lookup depends on
+ * a backend service that is routinely missing on emulators, and this exists
+ * specifically so the location can be set reliably during a demo.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ManualLocationPicker(
+    selected: ManualLocation?,
+    onSelect: (ManualLocation?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val colors = LocalHimaColors.current
+    var query by rememberSaveable { mutableStateOf("") }
+    // Matched against the localised name, so searching works in whichever
+    // language the app is currently showing.
+    val places = SaudiPlaces.all.map { it to stringResource(it.labelRes) }
+    val matches = places.filter { (_, label) -> label.contains(query.trim(), ignoreCase = true) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(),
+        containerColor = colors.surface,
+        shape = RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet),
+    ) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp)) {
+            Text(
+                text = stringResource(R.string.new_report_location_picker_title),
+                style = HimaTextStyles.h2,
+                color = colors.ink,
+            )
+            HimaTextField(
+                value = query,
+                onValueChange = { query = it },
+                hint = stringResource(R.string.new_report_location_search_hint),
+                modifier = Modifier.padding(top = 14.dp),
+            )
+            if (selected != null) {
+                HimaTextLink(
+                    text = stringResource(R.string.new_report_location_use_gps),
+                    onClick = {
+                        onSelect(null)
+                        onDismiss()
+                    },
+                    modifier = Modifier.padding(top = 14.dp),
+                )
+            }
+            if (matches.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.new_report_location_none_found),
+                    style = HimaTextStyles.b,
+                    color = colors.sage,
+                    modifier = Modifier.padding(top = 18.dp),
+                )
+            }
+            LazyColumn(Modifier.padding(top = 8.dp).heightIn(max = 320.dp)) {
+                items(matches, key = { it.first.labelRes }) { (place, label) ->
+                    val isSelected = selected?.labelRes == place.labelRes
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(HimaRadius.field))
+                            .clickable {
+                                onSelect(place)
+                                onDismiss()
+                            }
+                            .padding(horizontal = 12.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_field_pin),
+                            contentDescription = null,
+                            tint = if (isSelected) colors.green else colors.sage,
+                            modifier = Modifier.size(17.dp),
+                        )
+                        Text(
+                            text = label,
+                            style = HimaTextStyles.t.copy(fontSize = 15.sp),
+                            color = if (isSelected) colors.green else colors.ink,
+                        )
+                    }
+                }
+            }
+        }
     }
 }

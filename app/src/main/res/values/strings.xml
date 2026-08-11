@@ -66,6 +66,31 @@
     <string name="home_stat_done">تمت المعالجة</string>
     <string name="home_stat_critical">تنبيهات حرجة</string>
     <string name="home_impact_title">توزيع البلاغات</string>
+
+    <!-- Manual location override (demo aid on the new-report screen) -->
+    <string name="new_report_location_custom_badge">موقع مخصص</string>
+    <string name="new_report_location_set_manually">تحديد الموقع يدوياً</string>
+    <string name="new_report_location_picker_title">اختر موقع البلاغ</string>
+    <string name="new_report_location_search_hint">ابحث عن مدينة</string>
+    <string name="new_report_location_use_gps">استخدام الموقع الحالي (GPS)</string>
+    <string name="new_report_location_none_found">لا توجد نتائج مطابقة</string>
+    <string name="cd_edit_location">تعديل الموقع</string>
+    <string name="place_riyadh">الرياض</string>
+    <string name="place_jeddah">جدة</string>
+    <string name="place_mecca">مكة المكرمة</string>
+    <string name="place_medina">المدينة المنورة</string>
+    <string name="place_dammam">الدمام</string>
+    <string name="place_khobar">الخبر</string>
+    <string name="place_abha">أبها</string>
+    <string name="place_jazan">جازان</string>
+    <string name="place_najran">نجران</string>
+    <string name="place_tabuk">تبوك</string>
+    <string name="place_hail">حائل</string>
+    <string name="place_albaha">الباحة</string>
+    <string name="place_buraidah">بريدة</string>
+    <string name="place_yanbu">ينبع</string>
+    <string name="place_taif">الطائف</string>
+    <string name="place_king_salman_reserve">محمية الملك سلمان الملكية</string>
     <string name="home_recent">آخر البلاغات</string>
     <string name="home_view_all">عرض الكل</string>
 

@@ -66,6 +66,31 @@
     <string name="home_stat_done">Resolved</string>
     <string name="home_stat_critical">Critical alerts</string>
     <string name="home_impact_title">Report breakdown</string>
+
+    <!-- Manual location override (demo aid on the new-report screen) -->
+    <string name="new_report_location_custom_badge">Custom location</string>
+    <string name="new_report_location_set_manually">Set location manually</string>
+    <string name="new_report_location_picker_title">Choose report location</string>
+    <string name="new_report_location_search_hint">Search for a city</string>
+    <string name="new_report_location_use_gps">Use current location (GPS)</string>
+    <string name="new_report_location_none_found">No matching places</string>
+    <string name="cd_edit_location">Edit location</string>
+    <string name="place_riyadh">Riyadh</string>
+    <string name="place_jeddah">Jeddah</string>
+    <string name="place_mecca">Mecca</string>
+    <string name="place_medina">Medina</string>
+    <string name="place_dammam">Dammam</string>
+    <string name="place_khobar">Khobar</string>
+    <string name="place_abha">Abha</string>
+    <string name="place_jazan">Jazan</string>
+    <string name="place_najran">Najran</string>
+    <string name="place_tabuk">Tabuk</string>
+    <string name="place_hail">Hail</string>
+    <string name="place_albaha">Al-Baha</string>
+    <string name="place_buraidah">Buraidah</string>
+    <string name="place_yanbu">Yanbu</string>
+    <string name="place_taif">Taif</string>
+    <string name="place_king_salman_reserve">King Salman Royal Reserve</string>
     <string name="home_recent">Latest reports</string>
     <string name="home_view_all">View all</string>
 
