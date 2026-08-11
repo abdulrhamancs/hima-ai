@@ -284,6 +284,20 @@ fun MapScreen(
         }
     }
 
+    val incident = uiState.selectedIncident
+    if (incident != null) {
+        // Browsing the Map dismisses the selected marker normally. A focused
+        // route opened by Detail returns to that same report in one press.
+        BackHandler(onBack = {
+            if (viewModel.openedForFocusedReport) onBackClick() else viewModel.onDismissSheet()
+        })
+    }
+    val incidentDistanceLabel = incident?.let {
+        uiState.userLocation?.let { userLocation ->
+            distanceBearing(userLocation, LatLng(it.latitude, it.longitude)).formatLabel()
+        }
+    }
+
     Column(modifier = modifier.fillMaxSize().background(colors.bg)) {
         Box(
             Modifier
@@ -447,6 +461,25 @@ fun MapScreen(
                     .fillMaxWidth()
                     .padding(top = 50.dp, start = 16.dp, end = 16.dp),
             )
+
+            // The selected report's card. Deliberately *not* a ModalBottomSheet:
+            // that lays a full-screen scrim over the map, so a drag meant to pan
+            // to the pin landed on the scrim instead. Worse, dismissing a
+            // focus-opened selection navigates back to the report, which turned
+            // "move the map" into "leave the screen". As a plain bottom-aligned
+            // card it occupies only its own bounds, and the map stays live
+            // around it — only the button inside it navigates.
+            if (incident != null) {
+                IncidentCard(
+                    incident = incident,
+                    distanceLabel = incidentDistanceLabel,
+                    onViewReportClick = {
+                        viewModel.onDismissSheet()
+                        onViewReportClick(incident.report.id)
+                    },
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
 
         HimaBottomNavigation(
@@ -457,36 +490,6 @@ fun MapScreen(
             onReportsClick = onReportsClick,
             onMoreClick = onMoreClick,
         )
-    }
-
-    val incident = uiState.selectedIncident
-    if (incident != null) {
-        // Browsing the Map dismisses the selected marker normally. A focused
-        // route opened by Detail returns to that same report in one press.
-        val dismissSelection = {
-            if (viewModel.openedForFocusedReport) onBackClick() else viewModel.onDismissSheet()
-        }
-        BackHandler(onBack = dismissSelection)
-        val sheetState = rememberModalBottomSheetState()
-        val distanceLabel = uiState.userLocation?.let { userLocation ->
-            distanceBearing(userLocation, LatLng(incident.latitude, incident.longitude)).formatLabel()
-        }
-        ModalBottomSheet(
-            onDismissRequest = dismissSelection,
-            sheetState = sheetState,
-            containerColor = colors.surface,
-            shape = RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet),
-            dragHandle = { IncidentSheetHandle() },
-        ) {
-            IncidentSheetContent(
-                incident = incident,
-                distanceLabel = distanceLabel,
-                onViewReportClick = {
-                    viewModel.onDismissSheet()
-                    onViewReportClick(incident.report.id)
-                },
-            )
-        }
     }
 
     val fireHotspot = uiState.selectedFireHotspot
@@ -685,6 +688,37 @@ private fun MapFallbackNotice(
     }
 }
 
+/**
+ * The selected report, docked to the bottom of the map. Keeps the sheet's look
+ * — surface, rounded top corners, drag handle — without a modal's scrim, so it
+ * covers only the strip it actually occupies and leaves the map draggable
+ * everywhere else. Dismissed with Back or by choosing another marker.
+ */
+@Composable
+private fun IncidentCard(
+    incident: MapIncident,
+    onViewReportClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    distanceLabel: String? = null,
+) {
+    val colors = LocalHimaColors.current
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(12.dp, RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet))
+            .clip(RoundedCornerShape(topStart = HimaRadius.sheet, topEnd = HimaRadius.sheet))
+            .background(colors.surface),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        IncidentSheetHandle()
+        IncidentSheetContent(
+            incident = incident,
+            distanceLabel = distanceLabel,
+            onViewReportClick = onViewReportClick,
+        )
+    }
+}
+
 @Composable
 private fun IncidentSheetHandle(modifier: Modifier = Modifier) {
     val colors = LocalHimaColors.current
@@ -709,9 +743,17 @@ private fun IncidentSheetContent(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
+            // Top inset clears the sheet's 24dp corner radius, so the thumbnail
+            // sits inside the straight part of the edge rather than alongside
+            // the curve. Horizontal inset matches the 20dp the other screens use.
+            .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 6.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            // Same gap rhythm as ReportRow, and direction-agnostic, so Arabic
+            // mirrors it without a second set of values.
+            horizontalArrangement = Arrangement.spacedBy(13.dp),
+        ) {
             ReportImage(
                 imageUrl = report.imageUrl,
                 demoImageRes = report.demoImageRes,
@@ -721,11 +763,7 @@ private fun IncidentSheetContent(
                     .size(58.dp)
                     .clip(RoundedCornerShape(HimaRadius.thumb)),
             )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 13.dp, end = 13.dp),
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = report.titleOverride ?: stringResource(report.titleRes),
                     style = HimaTextStyles.t.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
@@ -767,7 +805,7 @@ private fun IncidentSheetContent(
             text = stringResource(R.string.map_view_report),
             onClick = onViewReportClick,
             leadingIconRes = R.drawable.ic_chevron,
-            modifier = Modifier.padding(top = 22.dp, bottom = 28.dp),
+            modifier = Modifier.padding(top = 20.dp, bottom = 24.dp),
         )
     }
 }
