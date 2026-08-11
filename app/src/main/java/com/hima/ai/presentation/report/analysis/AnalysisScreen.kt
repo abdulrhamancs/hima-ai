@@ -2,6 +2,7 @@ package com.hima.ai.presentation.report.analysis
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -29,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -83,9 +85,13 @@ fun AnalysisScreen(
     // How much of the verdict has landed. Hoisted up here (rather than living
     // beside the blocks it drives) because navigation waits on it — see below.
     var revealStage by remember { mutableIntStateOf(0) }
+    // Whether the reveal has finished *playing*, as opposed to merely having
+    // reached its last stage. These are not the same instant — see below.
+    var revealComplete by remember { mutableStateOf(false) }
     LaunchedEffect(result) {
         if (result == null) {
             revealStage = 0
+            revealComplete = false
             return@LaunchedEffect
         }
         delay(140L)
@@ -96,15 +102,21 @@ fun AnalysisScreen(
         revealStage = 3
         delay(REVEAL_GAP_MS)
         revealStage = 4
+        // Reaching stage 4 *starts* the closing beat rather than ending it: the
+        // action card is still rising, and the economy flow has only just been
+        // told to light its four nodes, which it does one at a time. Leaving
+        // now would cut both off mid-move. Hold for that beat to actually play.
+        delay(FINAL_BEAT_MS)
+        revealComplete = true
     }
 
     // The ViewModel calls the run complete ~500ms after the result arrives,
     // which is shorter than the reveal it kicks off. Holding navigation until
-    // the last beat has landed keeps the sequence from being cut off halfway —
+    // the reveal has finished playing keeps the sequence from being cut off —
     // a UI-timing concern, so it's gated here rather than by retiming the
     // ViewModel.
-    LaunchedEffect(uiState.isComplete, revealStage) {
-        if (uiState.isComplete && result != null && revealStage >= REVEAL_STAGE_COUNT) {
+    LaunchedEffect(uiState.isComplete, revealComplete) {
+        if (uiState.isComplete && result != null && revealComplete) {
             onAnalysisComplete(result)
         }
     }
@@ -189,7 +201,7 @@ fun AnalysisScreen(
             // Staged reveal — the verdict lands one beat at a time, so the model
             // reads as deciding rather than dumping a finished card. Driven by
             // revealStage, hoisted to the top of this composable.
-            AnimatedVisibility(visible = revealStage >= 1 && result != null, enter = revealEnter()) {
+            AnimatedVisibility(visible = revealStage >= 1 && result != null, enter = revealEnter(), exit = revealExit()) {
                 if (result != null) {
                     Column(Modifier.padding(top = 10.dp)) {
                         KeyValueRow(
@@ -200,7 +212,7 @@ fun AnalysisScreen(
                     }
                 }
             }
-            AnimatedVisibility(visible = revealStage >= 2 && result != null, enter = revealEnter()) {
+            AnimatedVisibility(visible = revealStage >= 2 && result != null, enter = revealEnter(), exit = revealExit()) {
                 if (result != null) {
                     Column {
                         if (isIncident) {
@@ -244,6 +256,7 @@ fun AnalysisScreen(
                 visible = revealStage >= 3 && result != null,
                 enter = slideInVertically(tween(420, easing = FastOutSlowInEasing)) { it / 2 } +
                     fadeIn(tween(420)),
+                exit = revealExit(),
             ) {
                 if (result != null) {
                     RecommendedActionCard(
@@ -257,6 +270,7 @@ fun AnalysisScreen(
             AnimatedVisibility(
                 visible = revealStage >= 3 && result != null,
                 enter = fadeIn(tween(420)),
+                exit = revealExit(),
             ) {
                 Column(Modifier.padding(top = 22.dp)) {
                     Text(
@@ -293,13 +307,21 @@ fun AnalysisScreen(
 /** Spacing between beats of the result reveal. */
 private const val REVEAL_GAP_MS = 200L
 
-/** How many beats the reveal runs through before the screen may advance. */
-private const val REVEAL_STAGE_COUNT = 4
+/**
+ * How long the closing beat needs to finish after the last stage is set: the
+ * economy flow lights four nodes 220ms apart, and the fourth still has a 320ms
+ * fade to run. Sized to that rather than guessed, so the sequence is never
+ * navigated away from mid-move.
+ */
+private const val FINAL_BEAT_MS = 4 * 220L + 320L
 
 /** Shared entrance for each staged result block: a short rise plus fade.
  *  Vertical by design — it has no start/end edge, so it needs no RTL mirroring. */
 private fun revealEnter(): EnterTransition =
     slideInVertically(tween(360, easing = FastOutSlowInEasing)) { it / 3 } + fadeIn(tween(360))
+
+/** Counterpart exit, so a block that goes away fades instead of hard-cutting. */
+private fun revealExit(): ExitTransition = fadeOut(tween(200))
 
 /**
  * The severity verdict landing. A spring with a little bounce carries it past
