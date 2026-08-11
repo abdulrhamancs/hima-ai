@@ -1,29 +1,4 @@
--- Hima AI — hackathon demo seed data
--- =====================================================================
--- Populates public.reports with realistic, geographically-spread incidents
--- across Saudi Arabia so the app looks fully alive for live judging: every
--- report category, a realistic status/severity mix, spread timestamps, and
--- populated AI-analysis fields.
---
--- SAFE TO RE-RUN: every row this script creates carries an image_url under
--- the 'https://picsum.photos/seed/hima-demo-' prefix, which no real report
--- can ever have (real reports point at this project's own Supabase Storage
--- 'report-images' bucket). The DELETE below only ever removes rows matching
--- that prefix, so re-running to refresh/reshuffle the demo set never
--- touches genuine report data.
---
--- PREREQUISITE: at least one account must already exist in auth.users —
--- every report needs an owning user_id, and this script attaches all
--- seeded reports to the oldest existing account rather than requiring you
--- to hand-edit UUIDs. If you want a dedicated "demo" reporter identity
--- instead, change the SELECT in the DO block below to filter by email.
---
--- Run this in the Supabase SQL Editor (or `supabase db execute -f`) against
--- the project the app actually points at (see SUPABASE_URL in
--- local.properties / backend/.env) — service-role / SQL-editor execution
--- bypasses RLS, which is required since these rows aren't being inserted
--- through an authenticated user's own session.
--- =====================================================================
+
 
 DELETE FROM public.reports WHERE image_url LIKE 'https://picsum.photos/seed/hima-demo-%';
 
@@ -44,7 +19,7 @@ BEGIN
   )
   VALUES
 
-  -- ===== FIRE (حريق) =====
+
   (
     v_user_id, 'https://picsum.photos/seed/hima-demo-fire-abha/800/600',
     'رُصد حريق نشط في الغطاء النباتي بمرتفعات عسير قرب أبها، مع انتشار دخان كثيف واتساع رقعة الاشتعال بسرعة بسبب الرياح.',
@@ -82,8 +57,7 @@ BEGIN
     now() - interval '1 day'
   ),
 
-  -- ===== WASTE (بلاستيك / نفايات) — always LOW severity, matching the
-  -- app's own recyclable_waste classification rule =====
+
   (
     v_user_id, 'https://picsum.photos/seed/hima-demo-waste-riyadh/800/600',
     'زجاجة بلاستيكية شفافة ملقاة على الرمال في محيط الرياض.',
@@ -130,7 +104,7 @@ BEGIN
     now() - interval '4 days'
   ),
 
-  -- ===== WATER_POLLUTION (تلوث مائي) =====
+
   (
     v_user_id, 'https://picsum.photos/seed/hima-demo-pollution-dhahran/800/600',
     'بقعة زيتية ملحوظة على سطح المياه قرب الساحل الصناعي في الظهران.',
@@ -168,7 +142,7 @@ BEGIN
     now() - interval '3 days'
   ),
 
-  -- ===== ILLEGAL_LOGGING (احتطاب) =====
+  
   (
     v_user_id, 'https://picsum.photos/seed/hima-demo-logging-albaha/800/600',
     'رُصدت عمليات قطع جائر لأشجار العرعر في غابات جبلية بمنطقة الباحة.',
@@ -197,7 +171,7 @@ BEGIN
     now() - interval '6 hours'
   ),
 
-  -- ===== ILLEGAL_HUNTING (صيد جائر) =====
+
   (
     v_user_id, 'https://picsum.photos/seed/hima-demo-hunting-ksrr/800/600',
     'رُصد نشاط صيد جائر يستهدف حيوانات برية محمية داخل حدود محمية الملك سلمان بن عبدالعزيز الملكية.',
@@ -226,7 +200,7 @@ BEGIN
     now() - interval '18 days'
   ),
 
-  -- ===== PLANT_DISEASE (آفات نباتية) =====
+ 
   (
     v_user_id, 'https://picsum.photos/seed/hima-demo-plant-qassim/800/600',
     'أعراض اصفرار وذبول على مجموعة نخيل في مزرعة قرب بريدة، يُحتمل أن تكون آفة نباتية منتشرة.',
@@ -255,7 +229,7 @@ BEGIN
     now() - interval '9 days'
   ),
 
-  -- ===== INJURED_ANIMAL (حيوان مصاب) =====
+ 
   (
     v_user_id, 'https://picsum.photos/seed/hima-demo-injured-najran/800/600',
     'حيوان بري مصاب رُصد بالقرب من طريق زراعي في نجران، يحتاج تدخلاً بيطرياً عاجلاً.',
@@ -284,7 +258,7 @@ BEGIN
     now() - interval '13 days'
   ),
 
-  -- ===== DEAD_ANIMAL (حيوان نافق) =====
+  
   (
     v_user_id, 'https://picsum.photos/seed/hima-demo-dead-tabuk/800/600',
     'عُثر على حيوان نافق قرب طريق سريع في تبوك، يستدعي ذلك فحصاً للتأكد من سبب النفوق.',
@@ -304,7 +278,7 @@ BEGIN
     now() - interval '16 hours'
   ),
 
-  -- ===== OTHER (أخرى) =====
+  
   (
     v_user_id, 'https://picsum.photos/seed/hima-demo-other-mecca/800/600',
     'أضرار غير مصنّفة بوضوح في غطاء نباتي على أطراف مكة المكرمة، تستدعي تحققاً ميدانياً لتحديد السبب.',
