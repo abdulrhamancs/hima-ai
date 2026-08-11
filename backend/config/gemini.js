@@ -6,18 +6,10 @@ if (!process.env.GEMINI_API_KEY) {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// موديل عام للمحادثة النصية (بدون قيود على شكل الرد)
+
 const chatModel = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
-// موديل مخصص لتحليل الصور (يرجع JSON منظم فقط)
-//
-// نتيجتان ممكنتان يحددهما result_category:
-//  - environmental_incident: حريق/صيد جائر/احتطاب/تلوث خطير — الحقول القديمة
-//    (issue_type, risk_score, risk_level, recommendation) كما هي، بلا تغيير.
-//  - recyclable_waste: عنصر قابل لإعادة التدوير أو إعادة الاستخدام (بلاستيك،
-//    زجاج، معدن، ورق) — حقول جديدة فقط (material_category,
-//    disposal_classification, reuse_suggestion) تدعم اقتصاد دائري بسيط دون
-//    التعامل معه كحادثة بيئية.
+
 const visionGenerationConfig = {
     responseMimeType: "application/json",
     maxOutputTokens: 2048,
@@ -115,9 +107,7 @@ const visionGenerationConfig = {
           description: "إرشاد آمن للتخلص عندما لا يكون الاسترداد مناسبًا. النفايات الإلكترونية/الخطرة لا تُوجَّه إلى النفايات المنزلية العادية",
         },
       },
-      // Gemini structured output is most reliable when every key is required.
-      // Category-specific fields use neutral empty/false/zero values and are
-      // ignored by the other Android result path.
+    
       required: [
         "is_recognizable",
         "is_environmental",
@@ -150,11 +140,7 @@ const visionModel = genAI.getGenerativeModel({
   generationConfig: visionGenerationConfig,
 });
 
-// Gemini quotas are enforced per Google project and model. Keep the stronger
-// multimodal model as primary, but let an exhausted per-model allowance fall
-// back to Google's stable, lower-cost structured-extraction model. Android
-// continues to use the same backend endpoint and never sees either API key or
-// model implementation detail.
+
 const visionFallbackModel = genAI.getGenerativeModel({
   model: "gemini-3.5-flash-lite",
   generationConfig: visionGenerationConfig,
@@ -170,7 +156,7 @@ const ANALYZE_IMAGE_PROMPT =
   "Set reusable, repairable, recyclable, and preferred_action consistently. Never recommend ordinary household trash for e-waste, batteries, or hazardous material; use specialized collection/recovery guidance without inventing a facility. " +
   "Do not invent prices, statistics, collection points, facilities, or unsupported material claims.";
 
-// Shared by /analyze and POST /reports so both call Gemini identically.
+
 async function analyzeImage(buffer, mimeType, context = {}) {
   const imagePart = {
     inlineData: {
