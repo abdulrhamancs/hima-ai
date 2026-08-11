@@ -10,8 +10,7 @@ const supabase = createClient(
   process.env.SUPABASE_PUBLISHABLE_KEY
 );
 
-// Per-request client scoped to the caller's access token, so inserts/selects
-// run under that user's identity and respect RLS (auth.uid() resolves correctly).
+
 function createUserClient(accessToken) {
   return createClient(
     process.env.SUPABASE_URL,
